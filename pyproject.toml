@@ -1,0 +1,15 @@
+[project]
+name = "quant-platform"
+version = "0.1.0"
+description = "TramitaGO Quant Platform"
+requires-python = ">=3.11"
+
+dependencies = [
+    "yfinance"
+]
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
