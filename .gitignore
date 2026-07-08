@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+/src/bin/
+/src/lib/
+/src/lib64
+/src/pyvenv.cfg
+/data/
+/src/quant_platform.egg-info/
