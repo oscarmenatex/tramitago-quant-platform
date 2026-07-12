@@ -1,4 +1,14 @@
-"""Run the Data Quality Foundation MVP demonstration."""
+"""Demostración de aceptación de la Data Quality Layer (IT-019-002).
+
+El script usa exclusivamente la API pública:
+
+- `MarketData`
+- `MarketDataQualityChecker`
+- `QualityReport`
+
+Genera dos datasets sintéticos (válido / inválido), ejecuta la comprobación
+de calidad y realiza las verificaciones explícitas solicitadas.
+"""
 
 from datetime import datetime
 
@@ -6,68 +16,96 @@ from quant_platform.data.models import MarketData
 from quant_platform.data.quality import MarketDataQualityChecker, QualityReport
 
 
-def build_market_data() -> list[MarketData]:
-    """Build deterministic MarketData records for the demonstration."""
+def _dt(date_str: str) -> datetime:
+    return datetime.fromisoformat(date_str)
+
+
+def build_valid_market_data() -> list[MarketData]:
+    # Ordered, no duplicates, OHLC valid, positive volume
     return [
-        MarketData(
-            symbol="AAPL",
-            timestamp=datetime(2024, 1, 2),
-            open=100.0,
-            high=105.0,
-            low=99.0,
-            close=104.0,
-            volume=1_000_000.0,
-        ),
-        MarketData(
-            symbol="AAPL",
-            timestamp=datetime(2024, 1, 3),
-            open=104.0,
-            high=107.0,
-            low=103.0,
-            close=106.0,
-            volume=1_200_000.0,
-        ),
-        MarketData(
-            symbol="AAPL",
-            timestamp=datetime(2024, 1, 3),
-            open=106.0,
-            high=105.0,
-            low=104.0,
-            close=107.0,
-            volume=950_000.0,
-        ),
+        MarketData("AAPL", _dt("2024-01-02"), 130.0, 132.0, 129.0, 131.0, 1_000_000),
+        MarketData("AAPL", _dt("2024-01-03"), 131.0, 133.0, 130.0, 132.0, 1_200_000),
+        MarketData("AAPL", _dt("2024-01-04"), 132.0, 134.0, 131.0, 133.0, 1_100_000),
     ]
 
 
-def print_report(report: QualityReport) -> None:
-    """Print the minimum explainable quality report summary."""
-    print(f"Dataset: {report.dataset_id}")
-    print(f"Cantidad de registros: {report.total_records}")
-    print(f"Registros faltantes: {report.missing_records}")
-    print(f"Registros duplicados: {report.duplicate_records}")
-    print(f"Estado: {report.status}")
-    print("Errores encontrados:")
+def build_invalid_market_data() -> list[MarketData]:
+    # Introduce: duplicate timestamp and OHLC inconsistency (high < close)
+    t1 = _dt("2024-01-02")
+    t2 = _dt("2024-01-03")
+    return [
+        MarketData("AAPL", t1, 130.0, 132.0, 129.0, 131.0, 1_000_000),
+        MarketData("AAPL", t2, 131.0, 133.0, 130.0, 132.0, 1_200_000),
+        MarketData("AAPL", t2, 131.0, 133.0, 130.0, 132.0, 1_200_000),  # duplicate
+        # OHLC inconsistency: single OHLC error (high lower than open)
+        MarketData("AAPL", _dt("2024-01-04"), 130.0, 129.0, 128.0, 128.5, 1_100_000),
+    ]
 
-    if not report.validation_errors:
-        print("- Ninguno")
-        return
 
-    for error in report.validation_errors:
-        print(f"- {error}")
+def _print_valid_summary(report: QualityReport) -> None:
+    print("--- Caso VÁLIDO ---")
+    print(f"Nombre del dataset: {report.dataset_id}")
+    print(f"Número de registros: {report.total_records}")
+    print(f"Status: {report.status}")
+    print(f"Número de errores: {len(report.validation_errors)}")
+    print()
+
+
+def _print_invalid_summary(report: QualityReport) -> None:
+    print("--- Caso INVÁLIDO ---")
+    print(f"Nombre del dataset: {report.dataset_id}")
+    print(f"Número de registros: {report.total_records}")
+    print(f"Status: {report.status}")
+    print(f"Número de duplicados: {report.duplicate_records}")
+    print(f"Número de errores: {len(report.validation_errors)}")
+    print("Lista de errores detectados:")
+    for e in report.validation_errors:
+        print(f" - {e}")
+    print()
+
+
+
 
 
 def main() -> None:
+    # Encabezado institucional
     print("==========================================")
     print("TramitaGO Quant Platform")
-    print("Data Quality Foundation MVP Demonstration")
+    print("Data Quality Acceptance Demonstration IT-019-002")
     print("==========================================")
     print("MarketData -> MarketDataQualityChecker -> QualityReport")
+    print()
 
-    records = build_market_data()
     checker = MarketDataQualityChecker()
-    report = checker.check(records, dataset_id="demo_market_data")
 
-    print_report(report)
+    valid = build_valid_market_data()
+    invalid = build_invalid_market_data()
+
+    valid_report = checker.check(valid, dataset_id="valid_market_data")
+    invalid_report = checker.check(invalid, dataset_id="invalid_market_data")
+
+    # Verificaciones obligatorias
+    assert isinstance(valid_report, QualityReport), "valid_report debe ser QualityReport"
+    assert isinstance(invalid_report, QualityReport), "invalid_report debe ser QualityReport"
+
+    assert valid_report.status == "PASS", "Dataset válido debe tener status PASS"
+    assert invalid_report.status == "FAIL", "Dataset inválido debe tener status FAIL"
+
+    # Errores esperados: duplicado e inconsistencia OHLC
+    assert any("duplicates symbol" in e for e in invalid_report.validation_errors), (
+        "Se esperaba error de duplicado en el dataset inválido"
+    )
+
+    ohlc_errors = [
+        e
+        for e in invalid_report.validation_errors
+        if "high" in e or "low" in e
+    ]
+    assert len(ohlc_errors) >= 1, "Se esperaba al menos 1 error OHLC en el dataset inválido"
+
+    # Mostrar resultados mínimos solicitados
+    _print_valid_summary(valid_report)
+    _print_invalid_summary(invalid_report)
 
 
 if __name__ == "__main__":
