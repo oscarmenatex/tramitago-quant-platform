@@ -1,0 +1,45 @@
+tipo de document:
+No todos los documentos tienen el mismo propósito.
+
+Existen, al menos, cuatro categorías distintas:
+
+1. Documentos fundacionales
+
+Definen principios.
+
+Ejemplo:
+
+DOC-020
+
+Normalmente no generan IT.
+
+2. Documentos de arquitectura de dominio
+
+Definen cómo vive una entidad.
+
+Ejemplo:
+
+DOC-022
+(el futuro documento de Research)
+
+No implementan nada directamente, pero ordenan todos los IT posteriores.
+
+3. ADR
+
+Definen decisiones arquitectónicas.
+
+Ejemplo:
+
+ADR-009
+
+Tampoco suelen generar código inmediatamente.
+
+Su función es eliminar ambigüedad.
+
+4. IT
+
+Implementan capacidades concretas.
+
+Siempre terminan en código.
+
+Creo que esta clasificación nos evitará muchas discusiones futuras.

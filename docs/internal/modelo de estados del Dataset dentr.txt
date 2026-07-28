@@ -1,0 +1,27 @@
+modelo de estados del Dataset dentro de TramitaGO Quant Platform
+
+Proveedor
+
+↓
+
+Dataset adquirido
+
+↓
+
+Dataset normalizado
+
+↓
+
+Dataset validado
+
+↓
+
+Dataset administrado
+
+↓
+
+Dataset disponible
+
+↓
+
+Investigación

@@ -1,0 +1,16 @@
+atrón arquitectónico
+el patrón queda así:
+
+1. Aparece un nuevo dominio arquitectónico.
+
+2. Se identifica la entidad principal que vive en ese dominio.
+
+3. Se define su ciclo de vida.
+
+4. Del ciclo de vida emergen las capacidades mínimas.
+
+5. Cada capacidad genera uno o varios IT.
+
+6. La implementación valida o corrige el ciclo de vida.
+
+Observa que esto es exactamente lo que ocurrió con Data Platform.

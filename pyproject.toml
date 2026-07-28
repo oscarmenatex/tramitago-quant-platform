@@ -2,7 +2,7 @@
 name = "quant-platform"
 version = "0.1.0"
 description = "TramitaGO Quant Platform"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "numpy",
     "pandas",
@@ -12,9 +12,11 @@ dependencies = [
 
 [tool.black]
 line-length = 88
+target-version = ["py311"]
 
 [tool.ruff]
 line-length = 88
+target-version = "py311"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

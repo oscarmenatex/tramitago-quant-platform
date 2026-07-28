@@ -1,12 +1,16 @@
+# Local/runtime artefacts only. Source code, tests, documentation, scripts and
+# configuration are deliberately never ignored.
 .pytest_cache/
-__pycache__/
-*.pyc
+.mypy_cache/
+.ruff_cache/
+**/__pycache__/
+*.py[cod]
+.coverage
 .env
 venv/
 .venv/
 /src/bin/
 /src/lib/
-/src/lib64
+/src/lib64/
 /src/pyvenv.cfg
-/data/
 /src/quant_platform.egg-info/

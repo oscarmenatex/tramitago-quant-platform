@@ -64,9 +64,6 @@ def _print_invalid_summary(report: QualityReport) -> None:
     print()
 
 
-
-
-
 def main() -> None:
     # Encabezado institucional
     print("==========================================")
@@ -85,23 +82,27 @@ def main() -> None:
     invalid_report = checker.check(invalid, dataset_id="invalid_market_data")
 
     # Verificaciones obligatorias
-    assert isinstance(valid_report, QualityReport), "valid_report debe ser QualityReport"
-    assert isinstance(invalid_report, QualityReport), "invalid_report debe ser QualityReport"
+    assert isinstance(
+        valid_report, QualityReport
+    ), "valid_report debe ser QualityReport"
+    assert isinstance(
+        invalid_report, QualityReport
+    ), "invalid_report debe ser QualityReport"
 
     assert valid_report.status == "PASS", "Dataset válido debe tener status PASS"
     assert invalid_report.status == "FAIL", "Dataset inválido debe tener status FAIL"
 
     # Errores esperados: duplicado e inconsistencia OHLC
-    assert any("duplicates symbol" in e for e in invalid_report.validation_errors), (
-        "Se esperaba error de duplicado en el dataset inválido"
-    )
+    assert any(
+        "duplicates symbol" in e for e in invalid_report.validation_errors
+    ), "Se esperaba error de duplicado en el dataset inválido"
 
     ohlc_errors = [
-        e
-        for e in invalid_report.validation_errors
-        if "high" in e or "low" in e
+        e for e in invalid_report.validation_errors if "high" in e or "low" in e
     ]
-    assert len(ohlc_errors) >= 1, "Se esperaba al menos 1 error OHLC en el dataset inválido"
+    assert (
+        len(ohlc_errors) >= 1
+    ), "Se esperaba al menos 1 error OHLC en el dataset inválido"
 
     # Mostrar resultados mínimos solicitados
     _print_valid_summary(valid_report)

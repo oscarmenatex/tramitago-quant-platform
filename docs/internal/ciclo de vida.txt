@@ -1,0 +1,62 @@
+ciclo de vida:
+Data Lifecycle
+Acquire
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Available
+
+
+
+Research Lifecycle
+
+Available Dataset
+
+↓
+Research Definition
+
+↓
+Configuration
+
+↓
+Research Execution
+
+↓
+
+Research Result
+
+↓
+
+Knowledge
+
+
+
+Knowledge
+
+↓
+
+Strategy
+
+↓
+
+Backtesting
+
+↓
+
+Optimization
+
+↓
+
+Paper Trading
+
+↓
+
+Live Trading

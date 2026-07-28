@@ -1,0 +1,1 @@
+Si durante la implementación el Agente de Implementación detecta una inconsistencia entre esta especificación y la arquitectura definida en los documentos del proyecto, deberá detener la implementación y reportar la inconsistencia. No deberá resolverla mediante decisiones propias.

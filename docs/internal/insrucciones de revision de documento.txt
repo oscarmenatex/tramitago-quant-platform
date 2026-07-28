@@ -1,0 +1,13 @@
+antes de convertir DOC-019 en una decisión arquitectónica aprobada.
+
+Voy a evaluarlo desde los roles que hemos venido aplicando:
+
+Arquitecto de software: ¿encaja en la arquitectura?
+Ingeniero cuantitativo: ¿aporta valor real al proceso de inversión?
+Ingeniero de datos: ¿resuelve un problema existente?
+Gestor de proyecto: ¿es el siguiente paso correcto?
+Revisor crítico: ¿estamos agregando complejidad prematura?
+
+La pregunta central:
+
+¿DOC-019 añade una capacidad necesaria o estamos agregando complejidad prematura?
