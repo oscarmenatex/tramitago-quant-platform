@@ -19,19 +19,19 @@ class ResearchKnowledgeConfidenceRegistry:
     def __init__(self, knowledge_versions: KnowledgeVersionSource) -> None:
         self._knowledge_versions = knowledge_versions
         self._confidence: Dict[str, ResearchKnowledgeConfidenceRecord] = {}
-        self._validated_to_confidence: Dict[str, str] = {}
+        self._version_to_confidence: Dict[str, str] = {}
 
     def register(
         self,
         knowledge_confidence_id: str,
-        validated_knowledge_id: str,
+        knowledge_version_id: str,
         confidence_level: str,
         version: str = "1",
     ) -> ResearchKnowledgeConfidenceRecord:
         if not knowledge_confidence_id:
             raise ValueError("knowledge_confidence_id is required")
-        if not validated_knowledge_id:
-            raise ValueError("validated_knowledge_id is required")
+        if not knowledge_version_id:
+            raise ValueError("knowledge_version_id is required")
         if not confidence_level:
             raise ValueError("confidence_level is required")
         if confidence_level.upper() not in VALID_LEVELS:
@@ -42,18 +42,22 @@ class ResearchKnowledgeConfidenceRegistry:
                 f"knowledge confidence already registered '{knowledge_confidence_id}'"
             )
 
-        knowledge_version = self._knowledge_versions.get(validated_knowledge_id)
+        knowledge_version = self._knowledge_versions.get(knowledge_version_id)
         if knowledge_version is None:
-            raise ValueError(f"unknown validated knowledge '{validated_knowledge_id}'")
-
-        if validated_knowledge_id in self._validated_to_confidence:
+            raise ValueError(f"unknown knowledge version '{knowledge_version_id}'")
+        if knowledge_version.status != "VALIDATED":
             raise ValueError(
-                f"knowledge confidence already registered for validated knowledge '{validated_knowledge_id}'"
+                f"knowledge version '{knowledge_version_id}' is not consumable"
+            )
+
+        if knowledge_version_id in self._version_to_confidence:
+            raise ValueError(
+                f"knowledge confidence already registered for version '{knowledge_version_id}'"
             )
 
         record = ResearchKnowledgeConfidenceRecord(
             knowledge_confidence_id=knowledge_confidence_id,
-            validated_knowledge_id=validated_knowledge_id,
+            knowledge_version_id=knowledge_version_id,
             confidence_level=confidence_level.upper(),
             version=version,
             created_at=datetime.utcnow(),
@@ -61,7 +65,7 @@ class ResearchKnowledgeConfidenceRegistry:
         )
 
         self._confidence[knowledge_confidence_id] = record
-        self._validated_to_confidence[validated_knowledge_id] = knowledge_confidence_id
+        self._version_to_confidence[knowledge_version_id] = knowledge_confidence_id
         return record
 
     def get(

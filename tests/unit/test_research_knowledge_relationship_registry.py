@@ -1,244 +1,90 @@
-from datetime import datetime
+from dataclasses import FrozenInstanceError, dataclass
 
 import pytest
 
-from quant_platform.data.access import DatasetAccess
-from quant_platform.data.models import MarketData
-from quant_platform.data.quality import MarketDataQualityChecker
-from quant_platform.data.registry import DatasetRegistry
-from quant_platform.research import ResearchRegistry
-from quant_platform.research.configuration import ResearchConfigurationRegistry
-from quant_platform.research.execution.research_execution_registry import (
-    ResearchExecutionRegistry,
-)
-from quant_platform.research.knowledge.candidate.research_knowledge_candidate_registry import (
-    ResearchKnowledgeCandidateRegistry,
-)
 from quant_platform.research.knowledge.relationship.research_knowledge_relationship_access import (
     ResearchKnowledgeRelationshipAccess,
 )
 from quant_platform.research.knowledge.relationship.research_knowledge_relationship_registry import (
     ResearchKnowledgeRelationshipRegistry,
 )
-from quant_platform.research.knowledge.validation.research_validated_knowledge_registry import (
-    ResearchValidatedKnowledgeRegistry,
-)
-from quant_platform.research.result.research_result_registry import (
-    ResearchResultRegistry,
-)
 
 
-def build_available_dataset() -> DatasetRegistry:
-    registry = DatasetRegistry()
-    quality_report = MarketDataQualityChecker().check(
-        [
-            MarketData(
-                symbol="AAPL",
-                timestamp=datetime(2024, 1, 2),
-                open=100.0,
-                high=105.0,
-                low=99.0,
-                close=104.0,
-                volume=1_000_000.0,
-            )
-        ]
-    )
-    registry.register(
-        dataset_id="dataset-relationship",
-        name="AAPL sample",
-        version="v1",
-        source="synthetic",
-        quality_report=quality_report,
-    )
-    return registry
+@dataclass(frozen=True)
+class Version:
+    knowledge_id: str
+    knowledge_version_id: str
+    version: str
 
 
-def build_relationship_environment() -> tuple[
-    ResearchKnowledgeRelationshipRegistry,
-    ResearchKnowledgeRelationshipAccess,
-]:
-    registry = build_available_dataset()
-    access = DatasetAccess(registry)
-    research_registry = ResearchRegistry(access)
-    config_registry = ResearchConfigurationRegistry(research_registry)
-    exec_registry = ResearchExecutionRegistry(
-        config_registry, research_registry, access
-    )
-    result_registry = ResearchResultRegistry(exec_registry)
+class Versions:
+    def __init__(self, *versions: Version) -> None:
+        self.items = {version.knowledge_version_id: version for version in versions}
 
-    research_registry.register(
-        research_id="research-relationship",
-        name="Relationship test",
-        objective="Test relationship workflow",
-        dataset_id="dataset-relationship",
-        dataset_version="v1",
-    )
-    config_registry.register(
-        configuration_id="cfg-relationship",
-        research_id="research-relationship",
-        access_policy="read-only",
-        description="cfg",
-    )
-    exec_registry.register(
-        execution_id="exec-relationship-a", configuration_id="cfg-relationship"
-    )
-    exec_registry.start("exec-relationship-a")
-    exec_registry.complete("exec-relationship-a")
-    result_registry.register(
-        result_id="res-relationship-a", execution_id="exec-relationship-a"
-    )
-
-    exec_registry.register(
-        execution_id="exec-relationship-b", configuration_id="cfg-relationship"
-    )
-    exec_registry.start("exec-relationship-b")
-    exec_registry.complete("exec-relationship-b")
-    result_registry.register(
-        result_id="res-relationship-b", execution_id="exec-relationship-b"
-    )
-
-    candidate_registry = ResearchKnowledgeCandidateRegistry(result_registry)
-    candidate_registry.register(
-        knowledge_candidate_id="candidate-relationship-a",
-        result_id="res-relationship-a",
-        knowledge_type="Pattern",
-        description="First candidate",
-    )
-    candidate_registry.register(
-        knowledge_candidate_id="candidate-relationship-b",
-        result_id="res-relationship-b",
-        knowledge_type="Pattern",
-        description="Second candidate",
-    )
-
-    validated_registry = ResearchValidatedKnowledgeRegistry(candidate_registry)
-    validated_registry.register(
-        validated_knowledge_id="validated-relationship-a",
-        candidate_id="candidate-relationship-a",
-        result_id="res-relationship-a",
-        knowledge_type="Pattern",
-        description="First validated",
-    )
-    validated_registry.register(
-        validated_knowledge_id="validated-relationship-b",
-        candidate_id="candidate-relationship-b",
-        result_id="res-relationship-b",
-        knowledge_type="Pattern",
-        description="Second validated",
-    )
-
-    relationship_registry = ResearchKnowledgeRelationshipRegistry(validated_registry)
-    access_layer = ResearchKnowledgeRelationshipAccess(relationship_registry)
-    return relationship_registry, access_layer
+    def get(self, knowledge_version_id: str) -> Version | None:
+        return self.items.get(knowledge_version_id)
 
 
-def test_register_relationship_creates_record():
+def build_relationship_environment() -> tuple[ResearchKnowledgeRelationshipRegistry, ResearchKnowledgeRelationshipAccess]:
+    registry = ResearchKnowledgeRelationshipRegistry(
+        Versions(Version("K-001", "KV-001", "1"), Version("K-001", "KV-002", "2"), Version("K-002", "KV-101", "1"), Version("K-003", "KV-201", "1"))
+    )
+    return registry, ResearchKnowledgeRelationshipAccess(registry)
+
+
+def test_register_relationship_creates_record() -> None:
     registry, _ = build_relationship_environment()
-
-    relation = registry.register(
-        knowledge_relationship_id="relationship-1",
-        source_knowledge_id="validated-relationship-a",
-        target_knowledge_id="validated-relationship-b",
-        relationship_type="supports",
-    )
-
-    assert relation.knowledge_relationship_id == "relationship-1"
-    assert relation.source_knowledge_id == "validated-relationship-a"
-    assert relation.target_knowledge_id == "validated-relationship-b"
-    assert relation.relationship_type == "SUPPORTS"
-    assert relation.created_at is not None
+    record = registry.register("rel-001", "KV-001", "KV-101", "supports")
+    assert record.source_knowledge_version_id == "KV-001"
+    assert record.target_knowledge_version_id == "KV-101"
+    assert record.relationship_type == "SUPPORTS"
 
 
-def test_register_relationship_rejects_unknown_knowledge():
+def test_register_relationship_rejects_unknown_knowledge() -> None:
     registry, _ = build_relationship_environment()
-
-    with pytest.raises(ValueError, match="unknown source knowledge"):
-        registry.register(
-            knowledge_relationship_id="relationship-2",
-            source_knowledge_id="missing-source",
-            target_knowledge_id="validated-relationship-b",
-            relationship_type="related_to",
-        )
+    with pytest.raises(ValueError, match="unknown source"):
+        registry.register("rel-001", "KV-missing", "KV-101", "supports")
+    with pytest.raises(ValueError, match="unknown target"):
+        registry.register("rel-002", "KV-001", "KV-missing", "supports")
 
 
-def test_register_relationship_rejects_self_reference():
+def test_register_relationship_rejects_self_reference() -> None:
     registry, _ = build_relationship_environment()
-
     with pytest.raises(ValueError, match="must be different"):
-        registry.register(
-            knowledge_relationship_id="relationship-3",
-            source_knowledge_id="validated-relationship-a",
-            target_knowledge_id="validated-relationship-a",
-            relationship_type="refines",
-        )
+        registry.register("rel-001", "KV-001", "KV-001", "supports")
 
 
-def test_register_relationship_rejects_duplicates():
+def test_register_relationship_rejects_duplicates() -> None:
     registry, _ = build_relationship_environment()
-
-    registry.register(
-        knowledge_relationship_id="relationship-4",
-        source_knowledge_id="validated-relationship-a",
-        target_knowledge_id="validated-relationship-b",
-        relationship_type="related_to",
-    )
-
+    registry.register("rel-001", "KV-001", "KV-101", "supports")
     with pytest.raises(ValueError, match="already registered"):
-        registry.register(
-            knowledge_relationship_id="relationship-5",
-            source_knowledge_id="validated-relationship-a",
-            target_knowledge_id="validated-relationship-b",
-            relationship_type="related_to",
-        )
+        registry.register("rel-002", "KV-001", "KV-101", "supports")
+    assert registry.register("rel-003", "KV-101", "KV-001", "supports").relationship_type == "SUPPORTS"
 
 
-def test_get_and_list_relationships():
+def test_get_and_list_relationships() -> None:
     registry, access = build_relationship_environment()
-
-    relation = registry.register(
-        knowledge_relationship_id="relationship-6",
-        source_knowledge_id="validated-relationship-a",
-        target_knowledge_id="validated-relationship-b",
-        relationship_type="refines",
-    )
-
-    assert registry.get("relationship-6") == relation
-    assert access.get("relationship-6") == relation
-    assert access.exists("relationship-6") is True
-    assert len(access.list()) == 1
+    relationship = registry.register("rel-001", "KV-001", "KV-101", "refines")
+    assert access.get("rel-001") is relationship
+    assert access.exists("rel-001") is True
+    assert access.list() == [relationship]
+    with pytest.raises(FrozenInstanceError):
+        relationship.relationship_type = "SUPPORTS"  # type: ignore[misc]
 
 
-def test_list_for_knowledge_returns_associated_relationships():
+def test_list_for_knowledge_returns_associated_relationships() -> None:
     registry, access = build_relationship_environment()
-
-    registry.register(
-        knowledge_relationship_id="relationship-7",
-        source_knowledge_id="validated-relationship-a",
-        target_knowledge_id="validated-relationship-b",
-        relationship_type="specializes",
-    )
-
-    related = access.list_for_knowledge("validated-relationship-a")
-    assert len(related) == 1
-    assert related[0].target_knowledge_id == "validated-relationship-b"
+    outgoing = registry.register("rel-out", "KV-001", "KV-101", "supports")
+    incoming = registry.register("rel-in", "KV-201", "KV-001", "related_to")
+    registry.register("rel-v2", "KV-002", "KV-101", "refines")
+    assert set(access.list_for_knowledge_version("KV-001")) == {outgoing, incoming}
+    assert access.list_for_knowledge_version("KV-002") == [registry.get("rel-v2")]
 
 
-def test_register_relationship_does_not_modify_validated_knowledge():
-    registry, _ = build_relationship_environment()
-
-    source = registry._knowledge_versions.get("validated-relationship-a")
-    target = registry._knowledge_versions.get("validated-relationship-b")
-
-    registry.register(
-        knowledge_relationship_id="relationship-8",
-        source_knowledge_id="validated-relationship-a",
-        target_knowledge_id="validated-relationship-b",
-        relationship_type="supports",
-    )
-
-    assert source is not None
-    assert target is not None
-    assert source.status == "VALIDATED"
-    assert target.status == "VALIDATED"
-    assert source.description == "First validated"
-    assert target.description == "Second validated"
+def test_register_relationship_does_not_modify_validated_knowledge() -> None:
+    registry, access = build_relationship_environment()
+    v1 = registry._knowledge_versions.get("KV-001")  # type: ignore[attr-defined]
+    registry.register("rel-v1", "KV-001", "KV-101", "supports")
+    registry.register("rel-v2", "KV-002", "KV-101", "supports")
+    assert registry._knowledge_versions.get("KV-001") is v1  # type: ignore[attr-defined]
+    assert access.list_for_knowledge_version("KV-001") != access.list_for_knowledge_version("KV-002")

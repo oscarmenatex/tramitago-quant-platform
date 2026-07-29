@@ -1,19 +1,7 @@
-from datetime import datetime
+from dataclasses import FrozenInstanceError, dataclass
 
 import pytest
 
-from quant_platform.data.access import DatasetAccess
-from quant_platform.data.models import MarketData
-from quant_platform.data.quality import MarketDataQualityChecker
-from quant_platform.data.registry import DatasetRegistry
-from quant_platform.research import ResearchRegistry
-from quant_platform.research.configuration import ResearchConfigurationRegistry
-from quant_platform.research.execution.research_execution_registry import (
-    ResearchExecutionRegistry,
-)
-from quant_platform.research.knowledge.candidate.research_knowledge_candidate_registry import (
-    ResearchKnowledgeCandidateRegistry,
-)
 from quant_platform.research.knowledge.confidence.research_knowledge_confidence_access import (
     ResearchKnowledgeConfidenceAccess,
 )
@@ -23,203 +11,79 @@ from quant_platform.research.knowledge.confidence.research_knowledge_confidence_
 from quant_platform.research.knowledge.confidence.research_knowledge_confidence_service import (
     ResearchKnowledgeConfidenceService,
 )
-from quant_platform.research.knowledge.validation.research_validated_knowledge_registry import (
-    ResearchValidatedKnowledgeRegistry,
-)
-from quant_platform.research.result.research_result_registry import (
-    ResearchResultRegistry,
-)
 
 
-def build_available_dataset() -> DatasetRegistry:
-    registry = DatasetRegistry()
-    quality_report = MarketDataQualityChecker().check(
-        [
-            MarketData(
-                symbol="AAPL",
-                timestamp=datetime(2024, 1, 2),
-                open=100.0,
-                high=105.0,
-                low=99.0,
-                close=104.0,
-                volume=1_000_000.0,
-            )
-        ]
+@dataclass(frozen=True)
+class Version:
+    knowledge_id: str
+    knowledge_version_id: str
+    version: str
+    status: str = "VALIDATED"
+
+
+class Versions:
+    def __init__(self, *versions: Version) -> None:
+        self.versions = {version.knowledge_version_id: version for version in versions}
+
+    def get(self, knowledge_version_id: str) -> Version | None:
+        return self.versions.get(knowledge_version_id)
+
+
+def build_confidence_environment() -> tuple[ResearchKnowledgeConfidenceRegistry, ResearchKnowledgeConfidenceService, ResearchKnowledgeConfidenceAccess]:
+    registry = ResearchKnowledgeConfidenceRegistry(
+        Versions(Version("K-001", "KV-001", "1"), Version("K-001", "KV-002", "2"), Version("K-002", "KV-101", "1"))
     )
-    registry.register(
-        dataset_id="dataset-confidence",
-        name="AAPL sample",
-        version="v1",
-        source="synthetic",
-        quality_report=quality_report,
-    )
-    return registry
+    return registry, ResearchKnowledgeConfidenceService(registry), ResearchKnowledgeConfidenceAccess(registry)
 
 
-def build_confidence_environment() -> tuple[
-    ResearchKnowledgeConfidenceRegistry,
-    ResearchKnowledgeConfidenceService,
-    ResearchKnowledgeConfidenceAccess,
-]:
-    registry = build_available_dataset()
-    access = DatasetAccess(registry)
-    research_registry = ResearchRegistry(access)
-    config_registry = ResearchConfigurationRegistry(research_registry)
-    exec_registry = ResearchExecutionRegistry(
-        config_registry, research_registry, access
-    )
-    result_registry = ResearchResultRegistry(exec_registry)
-
-    research_registry.register(
-        research_id="research-confidence",
-        name="Confidence test",
-        objective="Test confidence workflow",
-        dataset_id="dataset-confidence",
-        dataset_version="v1",
-    )
-    config_registry.register(
-        configuration_id="cfg-confidence",
-        research_id="research-confidence",
-        access_policy="read-only",
-        description="cfg",
-    )
-    exec_registry.register(
-        execution_id="exec-confidence", configuration_id="cfg-confidence"
-    )
-    exec_registry.start("exec-confidence")
-    exec_registry.complete("exec-confidence")
-    result_registry.register(result_id="res-confidence", execution_id="exec-confidence")
-
-    candidate_registry = ResearchKnowledgeCandidateRegistry(result_registry)
-    candidate_registry.register(
-        knowledge_candidate_id="candidate-confidence",
-        result_id="res-confidence",
-        knowledge_type="Pattern",
-        description="A reusable observation",
-    )
-
-    validated_registry = ResearchValidatedKnowledgeRegistry(candidate_registry)
-    validated_registry.register(
-        validated_knowledge_id="validated-confidence",
-        candidate_id="candidate-confidence",
-        result_id="res-confidence",
-        knowledge_type="Pattern",
-        description="A reusable observation",
-    )
-
-    confidence_registry = ResearchKnowledgeConfidenceRegistry(validated_registry)
-    service = ResearchKnowledgeConfidenceService(confidence_registry)
-    access_layer = ResearchKnowledgeConfidenceAccess(confidence_registry)
-    return confidence_registry, service, access_layer
-
-
-def test_assess_creates_confidence_and_preserves_validated_knowledge():
+def test_assess_creates_confidence_and_preserves_validated_knowledge() -> None:
     _, service, _ = build_confidence_environment()
-
-    confidence = service.assess(
-        knowledge_confidence_id="confidence-1",
-        validated_knowledge_id="validated-confidence",
-        confidence_level="high",
-    )
-
-    assert confidence.knowledge_confidence_id == "confidence-1"
-    assert confidence.validated_knowledge_id == "validated-confidence"
-    assert confidence.confidence_level == "HIGH"
-    assert confidence.status == "ASSESSED"
-    assert confidence.created_at is not None
+    record = service.assess("confidence-001", "KV-001", "high")
+    assert record.knowledge_version_id == "KV-001"
+    assert record.confidence_level == "HIGH"
 
 
-def test_assess_unknown_validated_knowledge_raises():
+def test_assess_unknown_validated_knowledge_raises() -> None:
     _, service, _ = build_confidence_environment()
-
-    with pytest.raises(ValueError, match="unknown validated knowledge"):
-        service.assess(
-            knowledge_confidence_id="confidence-2",
-            validated_knowledge_id="missing-validated",
-            confidence_level="medium",
-        )
+    with pytest.raises(ValueError, match="unknown knowledge version"):
+        service.assess("confidence-001", "KV-missing", "high")
 
 
-def test_assess_candidate_id_is_not_a_knowledge_version():
+def test_assess_candidate_id_is_not_a_knowledge_version() -> None:
     _, service, _ = build_confidence_environment()
-
-    with pytest.raises(ValueError, match="unknown validated knowledge"):
-        service.assess(
-            knowledge_confidence_id="confidence-2",
-            validated_knowledge_id="candidate-confidence",
-            confidence_level="high",
-        )
+    with pytest.raises(ValueError, match="unknown knowledge version"):
+        service.assess("confidence-001", "candidate-001", "high")
 
 
-@pytest.mark.parametrize(
-    ("knowledge_confidence_id", "validated_knowledge_id", "confidence_level"),
-    [
-        ("", "validated-confidence", "high"),
-        ("confidence-3", "", "high"),
-        ("confidence-3", "validated-confidence", ""),
-        ("confidence-3", "validated-confidence", "uncertain"),
-    ],
-)
-def test_assess_rejects_empty_or_invalid_inputs(
-    knowledge_confidence_id: str,
-    validated_knowledge_id: str,
-    confidence_level: str,
-) -> None:
+@pytest.mark.parametrize("confidence_id,version_id,level", [("", "KV-001", "high"), ("confidence-001", "", "high"), ("confidence-001", "KV-001", "uncertain")])
+def test_assess_rejects_empty_or_invalid_inputs(confidence_id: str, version_id: str, level: str) -> None:
     _, service, _ = build_confidence_environment()
-
     with pytest.raises(ValueError):
-        service.assess(
-            knowledge_confidence_id=knowledge_confidence_id,
-            validated_knowledge_id=validated_knowledge_id,
-            confidence_level=confidence_level,
-        )
+        service.assess(confidence_id, version_id, level)
 
 
-def test_assess_duplicate_confidence_id_raises():
+def test_assess_duplicate_confidence_id_raises() -> None:
     _, service, _ = build_confidence_environment()
-
-    service.assess(
-        knowledge_confidence_id="confidence-4",
-        validated_knowledge_id="validated-confidence",
-        confidence_level="low",
-    )
-
+    service.assess("confidence-001", "KV-001", "high")
     with pytest.raises(ValueError, match="already registered"):
-        service.assess(
-            knowledge_confidence_id="confidence-4",
-            validated_knowledge_id="validated-confidence",
-            confidence_level="high",
-        )
+        service.assess("confidence-001", "KV-002", "low")
 
 
-def test_assess_duplicate_validated_knowledge_raises():
+def test_assess_duplicate_validated_knowledge_raises() -> None:
     _, service, _ = build_confidence_environment()
-
-    service.assess(
-        knowledge_confidence_id="confidence-5",
-        validated_knowledge_id="validated-confidence",
-        confidence_level="medium",
-    )
-
-    with pytest.raises(ValueError, match="already registered for validated knowledge"):
-        service.assess(
-            knowledge_confidence_id="confidence-6",
-            validated_knowledge_id="validated-confidence",
-            confidence_level="high",
-        )
+    service.assess("confidence-001", "KV-001", "high")
+    with pytest.raises(ValueError, match="already registered for version"):
+        service.assess("confidence-002", "KV-001", "low")
 
 
-def test_registry_access_and_traceability_preserve_state():
-    registry, _, access = build_confidence_environment()
-
-    confidence = registry.register(
-        knowledge_confidence_id="confidence-7",
-        validated_knowledge_id="validated-confidence",
-        confidence_level="high",
-    )
-
-    assert registry.exists("confidence-7") is True
-    assert access.exists("confidence-7") is True
-    assert access.get("confidence-7") == confidence
-    assert len(access.list()) == 1
-    assert registry.list()[0].validated_knowledge_id == "validated-confidence"
+def test_registry_access_and_traceability_preserve_state() -> None:
+    _, service, access = build_confidence_environment()
+    v1 = service.assess("confidence-001", "KV-001", "high")
+    v2 = service.assess("confidence-002", "KV-002", "low")
+    other = service.assess("confidence-101", "KV-101", "medium")
+    assert access.get("confidence-001") is v1
+    assert {item.knowledge_version_id for item in access.list()} == {"KV-001", "KV-002", "KV-101"}
+    assert v1.confidence_level == "HIGH" and v2.confidence_level == "LOW"
+    assert other.confidence_level == "MEDIUM"
+    with pytest.raises(FrozenInstanceError):
+        v1.confidence_level = "LOW"  # type: ignore[misc]

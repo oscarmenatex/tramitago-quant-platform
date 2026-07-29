@@ -9,6 +9,7 @@ class KnowledgeConsumptionRecord:
     """Public, immutable read model for reusable knowledge."""
 
     knowledge_id: str
+    knowledge_version_id: str
     knowledge_type: str
     description: str
     status: str
@@ -35,8 +36,8 @@ class KnowledgeRelationshipConsumptionRecord:
     """Immutable public view of a relationship associated with knowledge."""
 
     relationship_reference: str
-    source_knowledge_id: str
-    target_knowledge_id: str
+    source_knowledge_version_id: str
+    target_knowledge_version_id: str
     relationship_type: str
     version: str
     created_at: datetime | None

@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pytest
+
 from quant_platform.data.access import DatasetAccess
 from quant_platform.data.models import MarketData
 from quant_platform.data.quality import MarketDataQualityChecker
@@ -97,10 +99,14 @@ def test_validate_creates_validated_knowledge_and_preserves_candidate():
 
     validated = service.validate(
         candidate_id="candidate-validation",
-        validated_knowledge_id="validated-validation",
+        knowledge_id="K-validation",
+        knowledge_version_id="KV-validation-001",
     )
 
-    assert validated.validated_knowledge_id == "validated-validation"
+    assert validated.knowledge_id == "K-validation"
+    assert validated.knowledge_version_id == "KV-validation-001"
+    assert validated.knowledge_id != validated.knowledge_version_id
+    assert validated.version == "1"
     assert validated.candidate_id == "candidate-validation"
     assert validated.result_id == "res-validation"
     assert validated.status == "VALIDATED"
@@ -115,26 +121,41 @@ def test_validate_creates_validated_knowledge_and_preserves_candidate():
 def test_validate_unknown_candidate_raises():
     _, service = build_candidate_environment()
 
-    try:
+    with pytest.raises(ValueError, match="unknown candidate"):
         service.validate(
-            candidate_id="missing-candidate", validated_knowledge_id="validated-2"
+            candidate_id="missing-candidate",
+            knowledge_id="K-missing",
+            knowledge_version_id="KV-missing-001",
         )
-        assert False, "Expected ValueError for unknown candidate"
-    except ValueError as exc:
-        assert "unknown candidate" in str(exc)
 
 
 def test_validate_candidate_twice_raises():
     _, service = build_candidate_environment()
 
     service.validate(
-        candidate_id="candidate-validation", validated_knowledge_id="validated-3"
+        candidate_id="candidate-validation",
+        knowledge_id="K-validation",
+        knowledge_version_id="KV-validation-001",
     )
 
-    try:
+    with pytest.raises(ValueError, match="already validated"):
         service.validate(
-            candidate_id="candidate-validation", validated_knowledge_id="validated-4"
+            candidate_id="candidate-validation",
+            knowledge_id="K-validation",
+            knowledge_version_id="KV-validation-002",
         )
-        assert False, "Expected ValueError for duplicate validation"
-    except ValueError as exc:
-        assert "already validated" in str(exc)
+
+
+def test_registry_rejects_reused_knowledge_version_id() -> None:
+    _, service = build_candidate_environment()
+    service.validate("candidate-validation", "K-validation", "KV-validation-001")
+
+    with pytest.raises(ValueError, match="knowledge version already registered"):
+        service._validated_registry.register(  # type: ignore[attr-defined]
+            knowledge_id="K-other",
+            knowledge_version_id="KV-validation-001",
+            candidate_id="candidate-validation",
+            result_id="res-validation",
+            knowledge_type="Pattern",
+            description="Duplicate version identity",
+        )

@@ -17,13 +17,13 @@ class ResearchKnowledgeConfidenceService:
     def assess(
         self,
         knowledge_confidence_id: str,
-        validated_knowledge_id: str,
+        knowledge_version_id: str,
         confidence_level: str,
         version: str = "1",
     ) -> ResearchKnowledgeConfidenceRecord:
         return self._registry.register(
             knowledge_confidence_id=knowledge_confidence_id,
-            validated_knowledge_id=validated_knowledge_id,
+            knowledge_version_id=knowledge_version_id,
             confidence_level=confidence_level,
             version=version,
         )

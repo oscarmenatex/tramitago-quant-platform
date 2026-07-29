@@ -36,44 +36,47 @@ class ResearchKnowledgeEvolutionRegistry:
         self._validated_registry = validated_registry
         self._result_registry = result_registry
         self._versions: Dict[str, ResearchKnowledgeEvolutionRecord] = {}
-        self._successor_by_knowledge_id: Dict[str, str] = {}
+        self._successor_by_version_id: Dict[str, str] = {}
 
     def register(
         self,
-        evolution_id: str,
-        previous_knowledge_id: str,
+        knowledge_version_id: str,
+        previous_knowledge_version_id: str,
         evidence_result_id: str,
         description: str,
     ) -> ResearchKnowledgeEvolutionRecord:
-        if not evolution_id:
-            raise ValueError("evolution_id is required")
-        if not previous_knowledge_id:
-            raise ValueError("previous_knowledge_id is required")
+        if not knowledge_version_id:
+            raise ValueError("knowledge_version_id is required")
+        if not previous_knowledge_version_id:
+            raise ValueError("previous_knowledge_version_id is required")
         if not evidence_result_id:
             raise ValueError("evidence_result_id is required")
         if not description:
             raise ValueError("description is required")
 
-        if self.exists(evolution_id):
-            raise ValueError(f"knowledge version already registered '{evolution_id}'")
+        if self.exists(knowledge_version_id):
+            raise ValueError(f"knowledge version already registered '{knowledge_version_id}'")
 
-        previous = self.get(previous_knowledge_id)
+        previous = self.get(previous_knowledge_version_id)
         if previous is None:
-            raise ValueError(f"unknown validated knowledge '{previous_knowledge_id}'")
+            raise ValueError(
+                f"unknown knowledge version '{previous_knowledge_version_id}'"
+            )
         if previous.status != VALIDATED:
             raise ValueError(
-                f"knowledge '{previous_knowledge_id}' is not in VALIDATED state"
+                f"knowledge version '{previous_knowledge_version_id}' is not in VALIDATED state"
             )
-        if previous_knowledge_id in self._successor_by_knowledge_id:
+        if previous_knowledge_version_id in self._successor_by_version_id:
             raise ValueError(
-                f"knowledge '{previous_knowledge_id}' already has an evolved version"
+                f"knowledge version '{previous_knowledge_version_id}' already has an evolved version"
             )
         if self._result_registry.get(evidence_result_id) is None:
             raise ValueError(f"unknown evidence result '{evidence_result_id}'")
 
         record = ResearchKnowledgeEvolutionRecord(
-            evolution_id=evolution_id,
-            previous_knowledge_id=previous_knowledge_id,
+            knowledge_version_id=knowledge_version_id,
+            knowledge_id=previous.knowledge_id,
+            previous_knowledge_version_id=previous_knowledge_version_id,
             candidate_id=previous.candidate_id,
             result_id=previous.result_id,
             evidence_result_id=evidence_result_id,
@@ -82,29 +85,35 @@ class ResearchKnowledgeEvolutionRegistry:
             version=self._next_version(previous.version),
             created_at=datetime.utcnow(),
         )
-        self._versions[evolution_id] = record
-        self._successor_by_knowledge_id[previous_knowledge_id] = evolution_id
+        if any(
+            version.knowledge_id == record.knowledge_id
+            and version.version == record.version
+            for version in self.list()
+        ):
+            raise ValueError("knowledge_id and version must be unique")
+        self._versions[knowledge_version_id] = record
+        self._successor_by_version_id[previous_knowledge_version_id] = knowledge_version_id
         return record
 
-    def get(self, knowledge_id: str) -> Optional[_KnowledgeVersion]:
-        evolved = self._versions.get(knowledge_id)
+    def get(self, knowledge_version_id: str) -> Optional[_KnowledgeVersion]:
+        evolved = self._versions.get(knowledge_version_id)
         if evolved is not None:
             return evolved
-        return self._validated_registry.get(knowledge_id)
+        return self._validated_registry.get(knowledge_version_id)
 
-    def exists(self, knowledge_id: str) -> bool:
-        return knowledge_id in self._versions or self._validated_registry.exists(
-            knowledge_id
+    def exists(self, knowledge_version_id: str) -> bool:
+        return knowledge_version_id in self._versions or self._validated_registry.exists(
+            knowledge_version_id
         )
 
     def list(self) -> List[ResearchKnowledgeEvolutionRecord]:
         return list(self._versions.values())
 
-    def get_predecessor(self, evolution_id: str) -> Optional[_KnowledgeVersion]:
-        version = self._versions.get(evolution_id)
+    def get_predecessor(self, knowledge_version_id: str) -> Optional[_KnowledgeVersion]:
+        version = self._versions.get(knowledge_version_id)
         if version is None:
             return None
-        return self.get(version.previous_knowledge_id)
+        return self.get(version.previous_knowledge_version_id)
 
     @staticmethod
     def _next_version(previous_version: str) -> str:
