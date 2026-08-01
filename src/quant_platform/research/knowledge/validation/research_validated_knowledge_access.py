@@ -17,12 +17,12 @@ class ResearchValidatedKnowledgeAccess:
         self._registry = registry
 
     def get(
-        self, validated_knowledge_id: str
+        self, knowledge_version_id: str
     ) -> Optional[ResearchValidatedKnowledgeRecord]:
-        return self._registry.get(validated_knowledge_id)
+        return self._registry.get(knowledge_version_id)
 
-    def exists(self, validated_knowledge_id: str) -> bool:
-        return self._registry.exists(validated_knowledge_id)
+    def exists(self, knowledge_version_id: str) -> bool:
+        return self._registry.exists(knowledge_version_id)
 
     def list(self) -> List[ResearchValidatedKnowledgeRecord]:
         return self._registry.list()

@@ -19,7 +19,9 @@ class ResearchKnowledgeValidationService:
             candidate_registry
         )
 
-    def validate(self, candidate_id: str, validated_knowledge_id: str) -> object:
+    def validate(
+        self, candidate_id: str, knowledge_id: str, knowledge_version_id: str
+    ) -> object:
         candidate = self._candidate_registry.get(candidate_id)
         if candidate is None:
             raise ValueError(f"unknown candidate '{candidate_id}'")
@@ -27,9 +29,9 @@ class ResearchKnowledgeValidationService:
         if candidate.status != "CANDIDATE":
             raise ValueError(f"candidate '{candidate_id}' is not in CANDIDATE state")
 
-        if self._validated_registry.exists(validated_knowledge_id):
+        if self._validated_registry.exists(knowledge_version_id):
             raise ValueError(
-                f"validated knowledge already registered '{validated_knowledge_id}'"
+                f"knowledge version already registered '{knowledge_version_id}'"
             )
 
         if candidate_id in {
@@ -38,7 +40,8 @@ class ResearchKnowledgeValidationService:
             raise ValueError(f"already validated '{candidate_id}'")
 
         record = self._validated_registry.register(
-            validated_knowledge_id=validated_knowledge_id,
+            knowledge_id=knowledge_id,
+            knowledge_version_id=knowledge_version_id,
             candidate_id=candidate_id,
             result_id=candidate.result_id,
             knowledge_type=candidate.knowledge_type,

@@ -16,18 +16,18 @@ class ResearchKnowledgeEvolutionAccess:
     def __init__(self, registry: ResearchKnowledgeEvolutionRegistry) -> None:
         self._registry = registry
 
-    def get(self, evolution_id: str) -> Optional[ResearchKnowledgeEvolutionRecord]:
+    def get(self, knowledge_version_id: str) -> Optional[ResearchKnowledgeEvolutionRecord]:
         return next(
             (
                 version
                 for version in self._registry.list()
-                if version.evolution_id == evolution_id
+                if version.knowledge_version_id == knowledge_version_id
             ),
             None,
         )
 
-    def exists(self, evolution_id: str) -> bool:
-        return self.get(evolution_id) is not None
+    def exists(self, knowledge_version_id: str) -> bool:
+        return self.get(knowledge_version_id) is not None
 
     def list(self) -> List[ResearchKnowledgeEvolutionRecord]:
         return self._registry.list()

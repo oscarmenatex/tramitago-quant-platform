@@ -21,15 +21,18 @@ class ResearchValidatedKnowledgeRegistry:
 
     def register(
         self,
-        validated_knowledge_id: str,
+        knowledge_id: str,
+        knowledge_version_id: str,
         candidate_id: str,
         result_id: str,
         knowledge_type: str,
         description: str,
         version: str = "1",
     ) -> ResearchValidatedKnowledgeRecord:
-        if not validated_knowledge_id:
-            raise ValueError("validated_knowledge_id is required")
+        if not knowledge_id:
+            raise ValueError("knowledge_id is required")
+        if not knowledge_version_id:
+            raise ValueError("knowledge_version_id is required")
         if not candidate_id:
             raise ValueError("candidate_id is required")
         if not result_id:
@@ -38,6 +41,10 @@ class ResearchValidatedKnowledgeRegistry:
             raise ValueError("knowledge_type is required")
         if not description:
             raise ValueError("description is required")
+        if knowledge_version_id in self._validated:
+            raise ValueError(
+                f"knowledge version already registered '{knowledge_version_id}'"
+            )
 
         candidate = self._candidate_registry.get(candidate_id)
         if candidate is None:
@@ -47,7 +54,8 @@ class ResearchValidatedKnowledgeRegistry:
             raise ValueError(f"already validated '{candidate_id}'")
 
         record = ResearchValidatedKnowledgeRecord(
-            validated_knowledge_id=validated_knowledge_id,
+            knowledge_id=knowledge_id,
+            knowledge_version_id=knowledge_version_id,
             candidate_id=candidate_id,
             result_id=result_id,
             knowledge_type=knowledge_type,
@@ -57,17 +65,17 @@ class ResearchValidatedKnowledgeRegistry:
             status="VALIDATED",
         )
 
-        self._validated[validated_knowledge_id] = record
-        self._candidate_to_validated[candidate_id] = validated_knowledge_id
+        self._validated[knowledge_version_id] = record
+        self._candidate_to_validated[candidate_id] = knowledge_version_id
         return record
 
     def get(
-        self, validated_knowledge_id: str
+        self, knowledge_version_id: str
     ) -> Optional[ResearchValidatedKnowledgeRecord]:
-        return self._validated.get(validated_knowledge_id)
+        return self._validated.get(knowledge_version_id)
 
-    def exists(self, validated_knowledge_id: str) -> bool:
-        return validated_knowledge_id in self._validated
+    def exists(self, knowledge_version_id: str) -> bool:
+        return knowledge_version_id in self._validated
 
     def list(self) -> List[ResearchValidatedKnowledgeRecord]:
         return list(self._validated.values())

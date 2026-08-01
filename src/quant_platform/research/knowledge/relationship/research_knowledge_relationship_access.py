@@ -27,7 +27,7 @@ class ResearchKnowledgeRelationshipAccess:
     def list(self) -> List[ResearchKnowledgeRelationshipRecord]:
         return self._registry.list()
 
-    def list_for_knowledge(
-        self, knowledge_id: str
+    def list_for_knowledge_version(
+        self, knowledge_version_id: str
     ) -> List[ResearchKnowledgeRelationshipRecord]:
-        return self._registry.list_for_knowledge(knowledge_id)
+        return self._registry.list_for_knowledge_version(knowledge_version_id)
