@@ -13,6 +13,17 @@ from quant_platform.strategy_evaluation.application import (
     StrategyEvaluationComparisonPublicationService,
     StrategyEvaluationService,
     StrategyEvaluationPublicationService,
+    StrategyEvaluationComparisonPublicationLifecycleService,
+    StrategyEvaluationPublicationLifecycleService,
+)
+from quant_platform.strategy_evaluation.lifecycle import (
+    PublicationLifecycleStatus,
+    PublishedStrategyEvaluationComparisonLifecycleAccess,
+    PublishedStrategyEvaluationComparisonLifecycleRecord,
+    PublishedStrategyEvaluationComparisonLifecycleRegistry,
+    PublishedStrategyEvaluationLifecycleAccess,
+    PublishedStrategyEvaluationLifecycleRecord,
+    PublishedStrategyEvaluationLifecycleRegistry,
 )
 from quant_platform.strategy_evaluation.domain.ports import (
     StrategyEvaluationComparator,
@@ -56,4 +67,13 @@ __all__ = [
     "StrategyEvaluationComparisonPublicationRegistry",
     "StrategyEvaluationPublicationService",
     "StrategyEvaluationComparisonPublicationService",
+    "PublicationLifecycleStatus",
+    "PublishedStrategyEvaluationLifecycleRecord",
+    "PublishedStrategyEvaluationComparisonLifecycleRecord",
+    "PublishedStrategyEvaluationLifecycleRegistry",
+    "PublishedStrategyEvaluationComparisonLifecycleRegistry",
+    "PublishedStrategyEvaluationLifecycleAccess",
+    "PublishedStrategyEvaluationComparisonLifecycleAccess",
+    "StrategyEvaluationPublicationLifecycleService",
+    "StrategyEvaluationComparisonPublicationLifecycleService",
 ]

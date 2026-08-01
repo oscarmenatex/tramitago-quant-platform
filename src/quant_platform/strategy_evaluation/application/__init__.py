@@ -12,10 +12,16 @@ from quant_platform.strategy_evaluation.application.strategy_evaluation_comparis
 from quant_platform.strategy_evaluation.application.strategy_evaluation_publication_service import (
     StrategyEvaluationPublicationService,
 )
+from quant_platform.strategy_evaluation.application.publication_lifecycle_service import (
+    StrategyEvaluationComparisonPublicationLifecycleService,
+    StrategyEvaluationPublicationLifecycleService,
+)
 
 __all__ = [
     "StrategyEvaluationService",
     "StrategyEvaluationComparisonService",
     "StrategyEvaluationPublicationService",
     "StrategyEvaluationComparisonPublicationService",
+    "StrategyEvaluationPublicationLifecycleService",
+    "StrategyEvaluationComparisonPublicationLifecycleService",
 ]

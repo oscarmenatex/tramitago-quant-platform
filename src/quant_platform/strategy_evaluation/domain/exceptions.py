@@ -89,6 +89,50 @@ class StrategyEvaluationComparisonExecutionError(StrategyEvaluationDomainError):
     """Raised when a comparator cannot complete its calculation."""
 
 
+class InvalidPublicationLifecycleRecordError(StrategyEvaluationDomainError):
+    """Raised when an immutable publication lifecycle record is invalid."""
+
+
+class DuplicatePublicationLifecycleIdError(StrategyEvaluationDomainError):
+    """Raised when a lifecycle identity has already been registered."""
+
+
+class PublicationLifecycleAlreadyRegisteredError(StrategyEvaluationDomainError):
+    """Raised when a publication already has an initial lifecycle record."""
+
+
+class PublicationLifecycleNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a requested publication lifecycle cannot be found."""
+
+
+class InvalidPublicationLifecycleTransitionError(StrategyEvaluationDomainError):
+    """Raised when a lifecycle transition violates the permitted state model."""
+
+
+class PublicationAlreadySupersededError(InvalidPublicationLifecycleTransitionError):
+    """Raised when a superseded publication receives another transition."""
+
+
+class PublicationAlreadyWithdrawnError(InvalidPublicationLifecycleTransitionError):
+    """Raised when a withdrawn publication receives another transition."""
+
+
+class PublicationSuccessorNotFoundError(StrategyEvaluationDomainError):
+    """Raised when the nominated successor publication does not exist."""
+
+
+class PublicationSuccessorLifecycleNotFoundError(StrategyEvaluationDomainError):
+    """Raised when the nominated successor has no registered lifecycle."""
+
+
+class PublicationSuccessorNotActiveError(InvalidPublicationLifecycleTransitionError):
+    """Raised when the nominated successor is not active."""
+
+
+class PublicationLifecycleCycleError(InvalidPublicationLifecycleTransitionError):
+    """Raised when a proposed succession would introduce a lifecycle cycle."""
+
+
 class InvalidPublishedStrategyEvaluationError(StrategyEvaluationDomainError):
     """Raised when a published evaluation violates its public contract."""
 

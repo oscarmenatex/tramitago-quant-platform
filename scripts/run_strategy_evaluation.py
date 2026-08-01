@@ -1,6 +1,6 @@
 """Run a local deterministic demonstration of Strategy Evaluation."""
 
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any
 
 from quant_platform.research.knowledge.consumption import KnowledgeConsumptionRecord
@@ -16,11 +16,18 @@ from quant_platform.strategy_evaluation import (
     StrategyEvaluationComparisonPublicationAccess,
     StrategyEvaluationComparisonPublicationRegistry,
     StrategyEvaluationComparisonPublicationService,
+    StrategyEvaluationComparisonPublicationLifecycleService,
+    PublishedStrategyEvaluationComparisonLifecycleAccess,
+    PublishedStrategyEvaluationComparisonLifecycleRegistry,
     StrategyEvaluationRegistry,
     StrategyEvaluationService,
     StrategyEvaluationPublicationAccess,
     StrategyEvaluationPublicationRegistry,
     StrategyEvaluationPublicationService,
+    StrategyEvaluationPublicationLifecycleService,
+    PublishedStrategyEvaluationLifecycleAccess,
+    PublishedStrategyEvaluationLifecycleRegistry,
+    PublicationLifecycleStatus,
 )
 
 
@@ -152,6 +159,70 @@ def main() -> None:
         publication_id="published-comparison-demo-001",
         comparison_id="comparison-demo-001",
     )
+    published_evaluation_successor = StrategyEvaluationPublicationService(
+        evaluation_publication_registry, evaluation_access
+    ).publish(
+        publication_id="publication-evaluation-B",
+        evaluation_id="evaluation-demo-candidate-001",
+    )
+    evaluation_lifecycle_registry = PublishedStrategyEvaluationLifecycleRegistry()
+    evaluation_lifecycle_access = PublishedStrategyEvaluationLifecycleAccess(
+        evaluation_lifecycle_registry
+    )
+    evaluation_lifecycle_service = StrategyEvaluationPublicationLifecycleService(
+        evaluation_publication_access, evaluation_lifecycle_registry
+    )
+    comparison_lifecycle_registry = PublishedStrategyEvaluationComparisonLifecycleRegistry()
+    comparison_lifecycle_access = PublishedStrategyEvaluationComparisonLifecycleAccess(
+        comparison_lifecycle_registry
+    )
+    comparison_lifecycle_service = StrategyEvaluationComparisonPublicationLifecycleService(
+        comparison_publication_access, comparison_lifecycle_registry
+    )
+    initial_time = datetime(2024, 2, 1, tzinfo=timezone.utc)
+    evaluation_lifecycle_service.register_initial(
+        lifecycle_id="evaluation-lifecycle-A-active",
+        publication_id="published-evaluation-demo-001",
+        transitioned_at=initial_time,
+    )
+    evaluation_lifecycle_service.register_initial(
+        lifecycle_id="evaluation-lifecycle-B-active",
+        publication_id="publication-evaluation-B",
+        transitioned_at=initial_time,
+    )
+    evaluation_lifecycle_service.supersede(
+        lifecycle_id="evaluation-lifecycle-A-superseded",
+        publication_id="published-evaluation-demo-001",
+        successor_publication_id="publication-evaluation-B",
+        transitioned_at=datetime(2024, 2, 2, tzinfo=timezone.utc),
+        reason="Successor evaluation publication is active.",
+    )
+    comparison_lifecycle_service.register_initial(
+        lifecycle_id="comparison-lifecycle-A-active",
+        publication_id="published-comparison-demo-001",
+        transitioned_at=initial_time,
+    )
+    comparison_lifecycle_service.withdraw(
+        lifecycle_id="comparison-lifecycle-A-withdrawn",
+        publication_id="published-comparison-demo-001",
+        transitioned_at=datetime(2024, 2, 2, tzinfo=timezone.utc),
+        reason="Comparison withdrawn from operational consumption.",
+    )
+    assert [record.status for record in evaluation_lifecycle_access.history(
+        "published-evaluation-demo-001"
+    )] == [PublicationLifecycleStatus.ACTIVE, PublicationLifecycleStatus.SUPERSEDED]
+    assert evaluation_lifecycle_access.get_current(
+        "published-evaluation-demo-001"
+    ).status is PublicationLifecycleStatus.SUPERSEDED
+    assert [record.status for record in comparison_lifecycle_access.history(
+        "published-comparison-demo-001"
+    )] == [PublicationLifecycleStatus.ACTIVE, PublicationLifecycleStatus.WITHDRAWN]
+    assert comparison_lifecycle_access.get_current(
+        "published-comparison-demo-001"
+    ).status is PublicationLifecycleStatus.WITHDRAWN
+    assert evaluation_publication_access.get("published-evaluation-demo-001") is published_evaluation
+    assert evaluation_publication_access.get("publication-evaluation-B") is published_evaluation_successor
+    assert comparison_publication_access.get("published-comparison-demo-001") is published_comparison
     assert evaluation_publication_access.get(
         "published-evaluation-demo-001"
     ) == published_evaluation
