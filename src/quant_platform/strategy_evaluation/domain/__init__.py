@@ -1,6 +1,10 @@
 """Canonical, infrastructure-free Strategy Evaluation domain."""
 
-from quant_platform.strategy_evaluation.domain.entities import Strategy, StrategyEvaluation
+from quant_platform.strategy_evaluation.domain.entities import (
+    Strategy,
+    StrategyEvaluation,
+    StrategyEvaluationComparison,
+)
 from quant_platform.strategy_evaluation.domain.exceptions import (
     InvalidEvaluationContextError,
     InvalidEvaluationCriteriaError,
@@ -13,8 +17,19 @@ from quant_platform.strategy_evaluation.domain.exceptions import (
     KnowledgeNotFoundError,
     KnowledgeVersionMismatchError,
     StrategyEvaluatorExecutionError,
+    DuplicateStrategyEvaluationComparisonError,
+    IncompatibleEvaluationContextError,
+    IncompatibleEvaluationCriteriaError,
+    IncompatibleEvaluationResultError,
+    IncompatibleKnowledgeReferenceError,
+    InvalidComparisonRequestError,
+    InvalidComparisonResultError,
+    InvalidStrategyEvaluationComparisonError,
+    StrategyEvaluationComparisonExecutionError,
+    StrategyEvaluationComparisonNotFoundError,
 )
 from quant_platform.strategy_evaluation.domain.value_objects import (
+    ComparisonResult,
     EvaluationContext,
     EvaluationCriteria,
 )
@@ -22,6 +37,7 @@ from quant_platform.strategy_evaluation.domain.value_objects import (
 __all__ = [
     "EvaluationContext",
     "EvaluationCriteria",
+    "ComparisonResult",
     "InconsistentStrategyEvaluationError",
     "InvalidEvaluationContextError",
     "InvalidEvaluationCriteriaError",
@@ -31,8 +47,19 @@ __all__ = [
     "InvalidStrategyError",
     "Strategy",
     "StrategyEvaluation",
+    "StrategyEvaluationComparison",
     "DuplicateStrategyEvaluationError",
     "KnowledgeNotFoundError",
     "KnowledgeVersionMismatchError",
     "StrategyEvaluatorExecutionError",
+    "DuplicateStrategyEvaluationComparisonError",
+    "IncompatibleEvaluationContextError",
+    "IncompatibleEvaluationCriteriaError",
+    "IncompatibleEvaluationResultError",
+    "IncompatibleKnowledgeReferenceError",
+    "InvalidComparisonRequestError",
+    "InvalidComparisonResultError",
+    "InvalidStrategyEvaluationComparisonError",
+    "StrategyEvaluationComparisonExecutionError",
+    "StrategyEvaluationComparisonNotFoundError",
 ]

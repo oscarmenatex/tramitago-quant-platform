@@ -6,5 +6,8 @@ from quant_platform.strategy_evaluation.domain.value_objects.evaluation_context 
 from quant_platform.strategy_evaluation.domain.value_objects.evaluation_criteria import (
     EvaluationCriteria,
 )
+from quant_platform.strategy_evaluation.domain.value_objects.comparison_result import (
+    ComparisonResult,
+)
 
-__all__ = ["EvaluationContext", "EvaluationCriteria"]
+__all__ = ["ComparisonResult", "EvaluationContext", "EvaluationCriteria"]

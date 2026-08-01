@@ -47,3 +47,43 @@ class InvalidEvaluationResultError(StrategyEvaluationDomainError):
 
 class StrategyEvaluatorExecutionError(StrategyEvaluationDomainError):
     """Raised when an evaluator cannot complete its calculation."""
+
+
+class InvalidStrategyEvaluationComparisonError(StrategyEvaluationDomainError):
+    """Raised when a StrategyEvaluationComparison violates an invariant."""
+
+
+class InvalidComparisonResultError(StrategyEvaluationDomainError):
+    """Raised when a ComparisonResult is invalid."""
+
+
+class DuplicateStrategyEvaluationComparisonError(StrategyEvaluationDomainError):
+    """Raised when a comparison identifier has already been registered."""
+
+
+class StrategyEvaluationComparisonNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a requested comparison is not registered."""
+
+
+class InvalidComparisonRequestError(StrategyEvaluationDomainError):
+    """Raised when a comparison request violates the service contract."""
+
+
+class IncompatibleEvaluationContextError(StrategyEvaluationDomainError):
+    """Raised when evaluations do not share an EvaluationContext."""
+
+
+class IncompatibleEvaluationCriteriaError(StrategyEvaluationDomainError):
+    """Raised when evaluations do not share EvaluationCriteria."""
+
+
+class IncompatibleKnowledgeReferenceError(StrategyEvaluationDomainError):
+    """Raised when evaluations do not share an exact Knowledge reference."""
+
+
+class IncompatibleEvaluationResultError(StrategyEvaluationDomainError):
+    """Raised when evaluation results cannot be structurally compared."""
+
+
+class StrategyEvaluationComparisonExecutionError(StrategyEvaluationDomainError):
+    """Raised when a comparator cannot complete its calculation."""

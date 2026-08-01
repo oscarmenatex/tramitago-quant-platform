@@ -5,10 +5,14 @@ from typing import Any
 
 from quant_platform.research.knowledge.consumption import KnowledgeConsumptionRecord
 from quant_platform.strategy_evaluation import (
+    ComparisonResult,
     EvaluationContext,
     EvaluationCriteria,
     Strategy,
     StrategyEvaluationAccess,
+    StrategyEvaluationComparisonAccess,
+    StrategyEvaluationComparisonRegistry,
+    StrategyEvaluationComparisonService,
     StrategyEvaluationRegistry,
     StrategyEvaluationService,
 )
@@ -39,6 +43,20 @@ class DeterministicDemoEvaluator:
 
     def evaluate(self, **_: Any) -> dict[str, str]:
         return {"evaluation_kind": "deterministic-demo-stub"}
+
+
+class DeterministicDemoComparator:
+    """Non-financial comparison stub used only by this demonstration."""
+
+    def compare(self, **values: Any) -> ComparisonResult:
+        return ComparisonResult(
+            {
+                "baseline_evaluation_id": values["baseline"].evaluation_id,
+                "candidate_evaluation_ids": tuple(
+                    candidate.evaluation_id for candidate in values["candidates"]
+                ),
+            }
+        )
 
 
 def main() -> None:
@@ -72,20 +90,59 @@ def main() -> None:
         ),
     )
 
-    service.evaluate(
-        evaluation_id="evaluation-demo",
+    baseline = service.evaluate(
+        evaluation_id="evaluation-demo-baseline",
         strategy=strategy,
         context=context,
         criteria=criteria,
         knowledge_id="knowledge-demo",
         knowledge_version="1",
     )
-    evaluation = StrategyEvaluationAccess(registry).get("evaluation-demo")
+    candidates = tuple(
+        service.evaluate(
+            evaluation_id=evaluation_id,
+            strategy=Strategy(strategy_id, {"rule": "demonstration"}, criteria),
+            context=context,
+            criteria=criteria,
+            knowledge_id="knowledge-demo",
+            knowledge_version="1",
+        )
+        for evaluation_id, strategy_id in (
+            ("evaluation-demo-candidate-001", "strategy-demo-candidate-001"),
+            ("evaluation-demo-candidate-002", "strategy-demo-candidate-002"),
+        )
+    )
+    evaluation = StrategyEvaluationAccess(registry).get(baseline.evaluation_id)
     print(f"evaluation_id: {evaluation.evaluation_id}")
     print(f"strategy_id: {evaluation.strategy.strategy_id}")
     print(f"knowledge_id: {evaluation.knowledge_id}")
     print(f"knowledge_version: {evaluation.knowledge_version}")
     print(f"result: {dict(evaluation.result)}")
+    comparison_registry = StrategyEvaluationComparisonRegistry()
+    created = StrategyEvaluationComparisonService(
+        DeterministicDemoComparator(), comparison_registry, StrategyEvaluationAccess(registry)
+    ).compare(
+        comparison_id="comparison-demo-001",
+        baseline_evaluation_id=baseline.evaluation_id,
+        candidate_evaluation_ids=tuple(candidate.evaluation_id for candidate in candidates),
+        comparison_method_id="deterministic-demo",
+        comparison_method_version="1.0",
+    )
+    recovered = StrategyEvaluationComparisonAccess(comparison_registry).get(created.id)
+    assert recovered == created
+    assert recovered.baseline_evaluation_id == "evaluation-demo-baseline"
+    assert recovered.candidate_evaluation_ids == (
+        "evaluation-demo-candidate-001",
+        "evaluation-demo-candidate-002",
+    )
+    assert recovered.comparison_method_id == "deterministic-demo"
+    assert recovered.comparison_method_version == "1.0"
+    print(f"comparison_id: {recovered.comparison_id}")
+    print(f"baseline_evaluation_id: {recovered.baseline_evaluation_id}")
+    print(f"candidate_evaluation_ids: {recovered.candidate_evaluation_ids}")
+    print(f"comparison_method_id: {recovered.comparison_method_id}")
+    print(f"comparison_method_version: {recovered.comparison_method_version}")
+    print(f"comparison_result: {dict(recovered.result.values)}")
 
 
 if __name__ == "__main__":
