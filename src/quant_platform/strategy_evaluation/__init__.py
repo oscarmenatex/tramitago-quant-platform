@@ -10,7 +10,9 @@ from quant_platform.strategy_evaluation.domain import (
 )
 from quant_platform.strategy_evaluation.application import (
     StrategyEvaluationComparisonService,
+    StrategyEvaluationComparisonPublicationService,
     StrategyEvaluationService,
+    StrategyEvaluationPublicationService,
 )
 from quant_platform.strategy_evaluation.domain.ports import (
     StrategyEvaluationComparator,
@@ -21,6 +23,14 @@ from quant_platform.strategy_evaluation.registry import (
     StrategyEvaluationComparisonRegistry,
     StrategyEvaluationAccess,
     StrategyEvaluationRegistry,
+)
+from quant_platform.strategy_evaluation.publication import (
+    PublishedStrategyEvaluation,
+    PublishedStrategyEvaluationComparison,
+    StrategyEvaluationComparisonPublicationAccess,
+    StrategyEvaluationComparisonPublicationRegistry,
+    StrategyEvaluationPublicationAccess,
+    StrategyEvaluationPublicationRegistry,
 )
 
 __all__ = [
@@ -38,4 +48,12 @@ __all__ = [
     "StrategyEvaluationComparator",
     "StrategyEvaluationService",
     "StrategyEvaluator",
+    "PublishedStrategyEvaluation",
+    "PublishedStrategyEvaluationComparison",
+    "StrategyEvaluationPublicationAccess",
+    "StrategyEvaluationComparisonPublicationAccess",
+    "StrategyEvaluationPublicationRegistry",
+    "StrategyEvaluationComparisonPublicationRegistry",
+    "StrategyEvaluationPublicationService",
+    "StrategyEvaluationComparisonPublicationService",
 ]

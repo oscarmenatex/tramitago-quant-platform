@@ -87,3 +87,39 @@ class IncompatibleEvaluationResultError(StrategyEvaluationDomainError):
 
 class StrategyEvaluationComparisonExecutionError(StrategyEvaluationDomainError):
     """Raised when a comparator cannot complete its calculation."""
+
+
+class InvalidPublishedStrategyEvaluationError(StrategyEvaluationDomainError):
+    """Raised when a published evaluation violates its public contract."""
+
+
+class InvalidPublishedStrategyEvaluationComparisonError(StrategyEvaluationDomainError):
+    """Raised when a published comparison violates its public contract."""
+
+
+class InvalidPublicationRequestError(StrategyEvaluationDomainError):
+    """Raised when a publication request is formally invalid."""
+
+
+class DuplicatePublicationIdError(StrategyEvaluationDomainError):
+    """Raised when a public publication identity is already registered."""
+
+
+class StrategyEvaluationAlreadyPublishedError(StrategyEvaluationDomainError):
+    """Raised when an evaluation source has already been published."""
+
+
+class StrategyEvaluationComparisonAlreadyPublishedError(StrategyEvaluationDomainError):
+    """Raised when a comparison source has already been published."""
+
+
+class PublishedStrategyEvaluationNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a published evaluation cannot be found."""
+
+
+class PublishedStrategyEvaluationComparisonNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a published comparison cannot be found."""
+
+
+class PublicationProjectionError(StrategyEvaluationDomainError):
+    """Raised when a source asset cannot be projected as public evidence."""
