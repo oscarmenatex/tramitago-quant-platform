@@ -43,6 +43,12 @@ from quant_platform.strategy_evaluation.publication import (
     StrategyEvaluationPublicationAccess,
     StrategyEvaluationPublicationRegistry,
 )
+from quant_platform.strategy_evaluation.resolution import (
+    PublicationResolutionKind,
+    ResolutionContext,
+    ResolutionResult,
+    StrategyEvaluationPublicationResolutionService,
+)
 
 __all__ = [
     "EvaluationContext",
@@ -76,4 +82,8 @@ __all__ = [
     "PublishedStrategyEvaluationComparisonLifecycleAccess",
     "StrategyEvaluationPublicationLifecycleService",
     "StrategyEvaluationComparisonPublicationLifecycleService",
+    "PublicationResolutionKind",
+    "ResolutionContext",
+    "ResolutionResult",
+    "StrategyEvaluationPublicationResolutionService",
 ]

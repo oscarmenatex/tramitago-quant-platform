@@ -167,3 +167,23 @@ class PublishedStrategyEvaluationComparisonNotFoundError(StrategyEvaluationDomai
 
 class PublicationProjectionError(StrategyEvaluationDomainError):
     """Raised when a source asset cannot be projected as public evidence."""
+
+
+class InvalidResolutionContextError(StrategyEvaluationDomainError):
+    """Raised when a public publication-resolution request is invalid."""
+
+
+class InvalidResolutionResultError(StrategyEvaluationDomainError):
+    """Raised when a public publication-resolution result is invalid."""
+
+
+class PublicationNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a requested public publication does not exist."""
+
+
+class PublicationNotResolvableError(StrategyEvaluationDomainError):
+    """Raised when a publication is not active for public consumption."""
+
+
+class AmbiguousPublicationResolutionError(StrategyEvaluationDomainError):
+    """Raised when a context maps to more than one public publication."""

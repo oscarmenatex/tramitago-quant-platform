@@ -1,6 +1,7 @@
 """Run a local deterministic demonstration of Strategy Evaluation."""
 
 from datetime import date, datetime, timezone
+from types import SimpleNamespace
 from typing import Any
 
 from quant_platform.research.knowledge.consumption import KnowledgeConsumptionRecord
@@ -28,6 +29,13 @@ from quant_platform.strategy_evaluation import (
     PublishedStrategyEvaluationLifecycleAccess,
     PublishedStrategyEvaluationLifecycleRegistry,
     PublicationLifecycleStatus,
+    ResolutionContext,
+    StrategyEvaluationPublicationResolutionService,
+)
+from quant_platform.strategy_evaluation.domain.exceptions import (
+    AmbiguousPublicationResolutionError,
+    PublicationNotFoundError,
+    PublicationNotResolvableError,
 )
 
 
@@ -202,6 +210,16 @@ def main() -> None:
         publication_id="published-comparison-demo-001",
         transitioned_at=initial_time,
     )
+    resolution = StrategyEvaluationPublicationResolutionService(
+        evaluation_publication_access,
+        comparison_publication_access,
+        evaluation_lifecycle_access,
+        comparison_lifecycle_access,
+    )
+    active_comparison = resolution.resolve(
+        ResolutionContext.for_comparison("comparison-demo-001")
+    )
+    assert active_comparison.publication is published_comparison
     comparison_lifecycle_service.withdraw(
         lifecycle_id="comparison-lifecycle-A-withdrawn",
         publication_id="published-comparison-demo-001",
@@ -247,6 +265,60 @@ def main() -> None:
     assert comparison_publication_access.resolve(
         "comparison-demo-001"
     ) is published_comparison
+    active_evaluation = resolution.resolve(
+        ResolutionContext.for_evaluation("evaluation-demo-candidate-001")
+    )
+    assert active_evaluation.publication is published_evaluation_successor
+    for context in (
+        ResolutionContext.for_evaluation("evaluation-demo-baseline"),
+        ResolutionContext.for_comparison("comparison-demo-001"),
+    ):
+        with_exception = False
+        try:
+            resolution.resolve(context)
+        except PublicationNotResolvableError:
+            with_exception = True
+        assert with_exception
+    try:
+        resolution.resolve(ResolutionContext.for_evaluation("missing"))
+    except PublicationNotFoundError:
+        pass
+    else:
+        raise AssertionError("Missing publication must not resolve.")
+    assert resolution.resolve(ResolutionContext.for_evaluation("evaluation-demo-candidate-001")) == active_evaluation
+
+    duplicate = type(published_evaluation_successor)(
+        "publication-evaluation-duplicate",
+        published_evaluation_successor.evaluation_id,
+        published_evaluation_successor.strategy_id,
+        published_evaluation_successor.knowledge_id,
+        published_evaluation_successor.knowledge_version,
+        published_evaluation_successor.context,
+        published_evaluation_successor.criteria,
+        published_evaluation_successor.result,
+    )
+
+    class DemoPublicationAccess:
+        def list(self):
+            return (published_evaluation_successor, duplicate)
+
+    class DemoLifecycleAccess:
+        def has_lifecycle(self, publication_id):
+            return True
+
+        def get_current(self, publication_id):
+            return SimpleNamespace(status=PublicationLifecycleStatus.ACTIVE)
+
+    ambiguous = StrategyEvaluationPublicationResolutionService(
+        DemoPublicationAccess(), comparison_publication_access,
+        DemoLifecycleAccess(), comparison_lifecycle_access,
+    )
+    try:
+        ambiguous.resolve(ResolutionContext.for_evaluation("evaluation-demo-candidate-001"))
+    except AmbiguousPublicationResolutionError:
+        pass
+    else:
+        raise AssertionError("Multiple active publications must be ambiguous.")
     forbidden_fields = {
         "ranking",
         "winner",
