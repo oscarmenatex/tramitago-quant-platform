@@ -10,7 +10,20 @@ from quant_platform.strategy_evaluation.domain import (
 )
 from quant_platform.strategy_evaluation.application import (
     StrategyEvaluationComparisonService,
+    StrategyEvaluationComparisonPublicationService,
     StrategyEvaluationService,
+    StrategyEvaluationPublicationService,
+    StrategyEvaluationComparisonPublicationLifecycleService,
+    StrategyEvaluationPublicationLifecycleService,
+)
+from quant_platform.strategy_evaluation.lifecycle import (
+    PublicationLifecycleStatus,
+    PublishedStrategyEvaluationComparisonLifecycleAccess,
+    PublishedStrategyEvaluationComparisonLifecycleRecord,
+    PublishedStrategyEvaluationComparisonLifecycleRegistry,
+    PublishedStrategyEvaluationLifecycleAccess,
+    PublishedStrategyEvaluationLifecycleRecord,
+    PublishedStrategyEvaluationLifecycleRegistry,
 )
 from quant_platform.strategy_evaluation.domain.ports import (
     StrategyEvaluationComparator,
@@ -21,6 +34,20 @@ from quant_platform.strategy_evaluation.registry import (
     StrategyEvaluationComparisonRegistry,
     StrategyEvaluationAccess,
     StrategyEvaluationRegistry,
+)
+from quant_platform.strategy_evaluation.publication import (
+    PublishedStrategyEvaluation,
+    PublishedStrategyEvaluationComparison,
+    StrategyEvaluationComparisonPublicationAccess,
+    StrategyEvaluationComparisonPublicationRegistry,
+    StrategyEvaluationPublicationAccess,
+    StrategyEvaluationPublicationRegistry,
+)
+from quant_platform.strategy_evaluation.resolution import (
+    PublicationResolutionKind,
+    ResolutionContext,
+    ResolutionResult,
+    StrategyEvaluationPublicationResolutionService,
 )
 
 __all__ = [
@@ -38,4 +65,25 @@ __all__ = [
     "StrategyEvaluationComparator",
     "StrategyEvaluationService",
     "StrategyEvaluator",
+    "PublishedStrategyEvaluation",
+    "PublishedStrategyEvaluationComparison",
+    "StrategyEvaluationPublicationAccess",
+    "StrategyEvaluationComparisonPublicationAccess",
+    "StrategyEvaluationPublicationRegistry",
+    "StrategyEvaluationComparisonPublicationRegistry",
+    "StrategyEvaluationPublicationService",
+    "StrategyEvaluationComparisonPublicationService",
+    "PublicationLifecycleStatus",
+    "PublishedStrategyEvaluationLifecycleRecord",
+    "PublishedStrategyEvaluationComparisonLifecycleRecord",
+    "PublishedStrategyEvaluationLifecycleRegistry",
+    "PublishedStrategyEvaluationComparisonLifecycleRegistry",
+    "PublishedStrategyEvaluationLifecycleAccess",
+    "PublishedStrategyEvaluationComparisonLifecycleAccess",
+    "StrategyEvaluationPublicationLifecycleService",
+    "StrategyEvaluationComparisonPublicationLifecycleService",
+    "PublicationResolutionKind",
+    "ResolutionContext",
+    "ResolutionResult",
+    "StrategyEvaluationPublicationResolutionService",
 ]

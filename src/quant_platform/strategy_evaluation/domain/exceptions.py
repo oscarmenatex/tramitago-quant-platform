@@ -87,3 +87,103 @@ class IncompatibleEvaluationResultError(StrategyEvaluationDomainError):
 
 class StrategyEvaluationComparisonExecutionError(StrategyEvaluationDomainError):
     """Raised when a comparator cannot complete its calculation."""
+
+
+class InvalidPublicationLifecycleRecordError(StrategyEvaluationDomainError):
+    """Raised when an immutable publication lifecycle record is invalid."""
+
+
+class DuplicatePublicationLifecycleIdError(StrategyEvaluationDomainError):
+    """Raised when a lifecycle identity has already been registered."""
+
+
+class PublicationLifecycleAlreadyRegisteredError(StrategyEvaluationDomainError):
+    """Raised when a publication already has an initial lifecycle record."""
+
+
+class PublicationLifecycleNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a requested publication lifecycle cannot be found."""
+
+
+class InvalidPublicationLifecycleTransitionError(StrategyEvaluationDomainError):
+    """Raised when a lifecycle transition violates the permitted state model."""
+
+
+class PublicationAlreadySupersededError(InvalidPublicationLifecycleTransitionError):
+    """Raised when a superseded publication receives another transition."""
+
+
+class PublicationAlreadyWithdrawnError(InvalidPublicationLifecycleTransitionError):
+    """Raised when a withdrawn publication receives another transition."""
+
+
+class PublicationSuccessorNotFoundError(StrategyEvaluationDomainError):
+    """Raised when the nominated successor publication does not exist."""
+
+
+class PublicationSuccessorLifecycleNotFoundError(StrategyEvaluationDomainError):
+    """Raised when the nominated successor has no registered lifecycle."""
+
+
+class PublicationSuccessorNotActiveError(InvalidPublicationLifecycleTransitionError):
+    """Raised when the nominated successor is not active."""
+
+
+class PublicationLifecycleCycleError(InvalidPublicationLifecycleTransitionError):
+    """Raised when a proposed succession would introduce a lifecycle cycle."""
+
+
+class InvalidPublishedStrategyEvaluationError(StrategyEvaluationDomainError):
+    """Raised when a published evaluation violates its public contract."""
+
+
+class InvalidPublishedStrategyEvaluationComparisonError(StrategyEvaluationDomainError):
+    """Raised when a published comparison violates its public contract."""
+
+
+class InvalidPublicationRequestError(StrategyEvaluationDomainError):
+    """Raised when a publication request is formally invalid."""
+
+
+class DuplicatePublicationIdError(StrategyEvaluationDomainError):
+    """Raised when a public publication identity is already registered."""
+
+
+class StrategyEvaluationAlreadyPublishedError(StrategyEvaluationDomainError):
+    """Raised when an evaluation source has already been published."""
+
+
+class StrategyEvaluationComparisonAlreadyPublishedError(StrategyEvaluationDomainError):
+    """Raised when a comparison source has already been published."""
+
+
+class PublishedStrategyEvaluationNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a published evaluation cannot be found."""
+
+
+class PublishedStrategyEvaluationComparisonNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a published comparison cannot be found."""
+
+
+class PublicationProjectionError(StrategyEvaluationDomainError):
+    """Raised when a source asset cannot be projected as public evidence."""
+
+
+class InvalidResolutionContextError(StrategyEvaluationDomainError):
+    """Raised when a public publication-resolution request is invalid."""
+
+
+class InvalidResolutionResultError(StrategyEvaluationDomainError):
+    """Raised when a public publication-resolution result is invalid."""
+
+
+class PublicationNotFoundError(StrategyEvaluationDomainError):
+    """Raised when a requested public publication does not exist."""
+
+
+class PublicationNotResolvableError(StrategyEvaluationDomainError):
+    """Raised when a publication is not active for public consumption."""
+
+
+class AmbiguousPublicationResolutionError(StrategyEvaluationDomainError):
+    """Raised when a context maps to more than one public publication."""
