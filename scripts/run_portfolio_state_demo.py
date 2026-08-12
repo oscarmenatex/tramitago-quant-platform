@@ -29,6 +29,8 @@ def main() -> None:
     cash = (MonetaryBalance(usd, Decimal("100")),)
     positions_only = PortfolioState(positions)
     cash_only = PortfolioState(monetary_balances=cash)
+    empty = PortfolioState()
+    assert empty == PortfolioState() and hash(empty) == hash(PortfolioState())
     mixed = PortfolioState(positions, cash)
     equivalent = PortfolioState(tuple(reversed(positions)), cash)
     assert mixed == equivalent and mixed.semantic_identity == equivalent.semantic_identity
@@ -42,7 +44,8 @@ def main() -> None:
     assert target.decision_proposal is proposal and target.risk_evaluation_result is conditional
 
     for action, error in (
-        (lambda: PortfolioState(), InvalidPortfolioComponentError),
+        (lambda: PortfolioPosition(a, Decimal("0")), InvalidPortfolioComponentError),
+        (lambda: MonetaryBalance(usd, Decimal("0")), InvalidPortfolioComponentError),
         (lambda: PortfolioState((PortfolioPosition(a, Decimal("1")), PortfolioPosition(a, Decimal("2")))), DuplicatePortfolioComponentError),
         (lambda: PortfolioState(positions, decision_proposal=proposal, risk_evaluation_result=RiskEvaluationResult(proposal, RiskEvaluationOutcome.REJECTED, "risk-v1"), current_portfolio_state=positions_only), InvalidPortfolioTraceabilityError),
     ):
@@ -53,7 +56,7 @@ def main() -> None:
         else:
             raise AssertionError(f"Expected {error.__name__}")
     print("Portfolio State demo passed.")
-    print(positions_only, cash_only, mixed, target.semantic_identity, sep="\n")
+    print(empty, positions_only, cash_only, mixed, target.semantic_identity, sep="\n")
 
 
 if __name__ == "__main__":
