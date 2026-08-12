@@ -31,9 +31,63 @@ def test_valid_mixed_state(instrument: InstrumentReference, currency: CurrencyRe
     assert state.positions and state.monetary_balances
 
 
-def test_rejects_empty_state() -> None:
-    with pytest.raises(InvalidPortfolioComponentError):
-        PortfolioState()
+def test_accepts_empty_state_with_reproducible_identity() -> None:
+    one = PortfolioState()
+    two = PortfolioState((), ())
+
+    assert one.positions == ()
+    assert one.monetary_balances == ()
+    assert one == two
+    assert hash(one) == hash(two)
+    assert one.semantic_identity == two.semantic_identity
+
+
+def test_empty_state_is_immutable() -> None:
+    state = PortfolioState()
+
+    with pytest.raises((FrozenInstanceError, AttributeError)):
+        state.positions = ()  # type: ignore[misc]
+
+
+def test_empty_state_can_act_as_current(
+    instrument: InstrumentReference, proposal, accepted
+) -> None:
+    current = PortfolioState()
+    target = PortfolioState(
+        (PortfolioPosition(instrument, Decimal("1")),),
+        decision_proposal=proposal,
+        risk_evaluation_result=accepted,
+        current_portfolio_state=current,
+    )
+
+    assert target.current_portfolio_state is current
+
+
+def test_empty_target_preserves_valid_traceability(
+    proposal, accepted, current_state
+) -> None:
+    target = PortfolioState(
+        decision_proposal=proposal,
+        risk_evaluation_result=accepted,
+        current_portfolio_state=current_state,
+    )
+
+    assert target.decision_proposal is proposal
+    assert target.risk_evaluation_result is accepted
+    assert target.current_portfolio_state is current_state
+
+
+def test_empty_target_rejects_invalid_traceability(proposal, current_state) -> None:
+    rejected = RiskEvaluationResult(
+        proposal, RiskEvaluationOutcome.REJECTED, "risk-v1"
+    )
+
+    with pytest.raises(InvalidPortfolioTraceabilityError):
+        PortfolioState(
+            decision_proposal=proposal,
+            risk_evaluation_result=rejected,
+            current_portfolio_state=current_state,
+        )
 
 
 @pytest.mark.parametrize("value", [Decimal("0"), Decimal("NaN"), Decimal("Infinity"), Decimal("-Infinity"), 1])

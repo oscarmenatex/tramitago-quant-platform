@@ -80,10 +80,6 @@ class PortfolioState:
             raise InvalidPortfolioComponentError(
                 "Portfolio components must be finite iterables."
             ) from None
-        if not supplied_positions and not supplied_balances:
-            raise InvalidPortfolioComponentError(
-                "A Portfolio State requires at least one material component."
-            )
         if any(not isinstance(item, PortfolioPosition) for item in supplied_positions):
             raise InvalidPortfolioComponentError(
                 "Positions must contain only PortfolioPosition values."
