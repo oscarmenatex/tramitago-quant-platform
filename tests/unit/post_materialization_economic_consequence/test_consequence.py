@@ -88,6 +88,22 @@ def test_multiple_facts_combine_by_instrument_and_currency(
     assert state.monetary_balances == (MonetaryBalance(usd, Decimal("-25")),)
 
 
+def test_source_input_order_has_no_public_contractual_meaning(
+    materialization_factory,
+) -> None:
+    first = materialization_factory(OperationDirection.BUY, "4", "10")
+    second = materialization_factory(OperationDirection.SELL, "1", "15")
+    previous = PortfolioState()
+
+    forward = derive_post_materialization_consequence(previous, [first, second])
+    reversed_input = derive_post_materialization_consequence(previous, [second, first])
+
+    assert forward.resulting_portfolio_state == reversed_input.resulting_portfolio_state
+    assert forward.source_materializations == reversed_input.source_materializations
+    assert forward == reversed_input
+    assert hash(forward) == hash(reversed_input)
+
+
 def test_multiple_instruments_and_currencies_do_not_apply_fx(materialization_factory) -> None:
     eur = CurrencyReference("EUR")
     other = InstrumentReference("FIGI", "OTHER")

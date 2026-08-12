@@ -11,6 +11,23 @@ from quant_platform.portfolio import MonetaryBalance, PortfolioPosition, Portfol
 from .exceptions import PostMaterializationEconomicConsequenceDomainError
 
 
+def _source_key(source: OperationalMaterialization) -> tuple[object, ...]:
+    return (
+        source.operation.instrument.semantic_identity,
+        source.operation.direction.value,
+        source.operation.quantity,
+        source.quantity,
+        source.price,
+        source.currency.semantic_identity,
+    )
+
+
+def _canonical_sources(
+    sources: tuple[OperationalMaterialization, ...],
+) -> tuple[OperationalMaterialization, ...]:
+    return tuple(sorted(sources, key=_source_key))
+
+
 def _derive_state(
     previous_state: PortfolioState,
     sources: tuple[OperationalMaterialization, ...],
@@ -72,12 +89,14 @@ class PostMaterializationEconomicConsequence:
             raise PostMaterializationEconomicConsequenceDomainError(
                 "A consequence requires one or more recognized materializations."
             )
+        canonical_sources = _canonical_sources(self.source_materializations)
+        object.__setattr__(self, "source_materializations", canonical_sources)
         if not isinstance(self.resulting_portfolio_state, PortfolioState):
             raise PostMaterializationEconomicConsequenceDomainError(
                 "A consequence requires one resulting PortfolioState."
             )
         if self.resulting_portfolio_state != _derive_state(
-            self.previous_portfolio_state, self.source_materializations
+            self.previous_portfolio_state, canonical_sources
         ):
             raise PostMaterializationEconomicConsequenceDomainError(
                 "The resulting state must be the exact economic consequence of its sources."
@@ -105,9 +124,12 @@ def derive_post_materialization_consequence(
         raise PostMaterializationEconomicConsequenceDomainError(
             "Derivation requires one or more recognized materializations."
         )
+    canonical_sources = _canonical_sources(sources)
 
     return PostMaterializationEconomicConsequence(
         previous_portfolio_state=previous_portfolio_state,
-        source_materializations=sources,
-        resulting_portfolio_state=_derive_state(previous_portfolio_state, sources),
+        source_materializations=canonical_sources,
+        resulting_portfolio_state=_derive_state(
+            previous_portfolio_state, canonical_sources
+        ),
     )
