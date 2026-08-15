@@ -1,20 +1,28 @@
 """Minimal public contract for the Risk capability."""
 
 from quant_platform.risk.domain import (
-    InconsistentRiskConditionsError,
+    InconsistentRiskConstraintsError,
     InvalidDecisionProposalError,
     InvalidEvaluationOutcomeError,
+    InvalidRiskConstraintError,
+    InvalidRiskContextReferenceError,
     InvalidRiskEvaluationBasisReferenceError,
+    RiskConstraint,
+    RiskConstraintKind,
     RiskEvaluationOutcome,
     RiskEvaluationResult,
     RiskEvaluationResultError,
 )
 
 __all__ = [
-    "InconsistentRiskConditionsError",
+    "InconsistentRiskConstraintsError",
     "InvalidDecisionProposalError",
     "InvalidEvaluationOutcomeError",
+    "InvalidRiskConstraintError",
+    "InvalidRiskContextReferenceError",
     "InvalidRiskEvaluationBasisReferenceError",
+    "RiskConstraint",
+    "RiskConstraintKind",
     "RiskEvaluationOutcome",
     "RiskEvaluationResult",
     "RiskEvaluationResultError",
