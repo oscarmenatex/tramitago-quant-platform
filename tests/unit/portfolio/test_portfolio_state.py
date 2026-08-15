@@ -18,6 +18,7 @@ from quant_platform.risk import (
     RiskEvaluationOutcome,
     RiskEvaluationResult,
 )
+from quant_platform.decision_model import EconomicProposition, ExposureOrientation
 
 
 def test_valid_positions_only(instrument: InstrumentReference) -> None:
@@ -235,7 +236,14 @@ def test_rejects_incoherent_proposal(
     instrument, proposal, accepted, current_state
 ) -> None:
     other = object.__new__(type(proposal))
-    object.__setattr__(other, "decision_intent", "other")
+    object.__setattr__(
+        other,
+        "economic_proposition",
+        EconomicProposition(
+            proposal.economic_proposition.instrument,
+            ExposureOrientation.NEGATIVE,
+        ),
+    )
     object.__setattr__(other, "evidence_references", proposal.evidence_references)
     object.__setattr__(other, "semantic_identity", "other")
     with pytest.raises(InvalidPortfolioTraceabilityError):

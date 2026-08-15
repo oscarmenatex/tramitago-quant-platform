@@ -2,7 +2,12 @@
 
 import pytest
 
-from quant_platform.decision_model import DecisionProposal
+from quant_platform.core import InstrumentReference
+from quant_platform.decision_model import (
+    DecisionProposal,
+    EconomicProposition,
+    ExposureOrientation,
+)
 from quant_platform.strategy_evaluation.resolution import ResolutionResult
 
 
@@ -20,12 +25,20 @@ def resolution(publication_id: str) -> ResolutionResult:
 @pytest.fixture
 def proposal() -> DecisionProposal:
     return DecisionProposal.from_resolutions(
-        "maintain current exposure", (resolution("public-evidence-a"),)
+        EconomicProposition(
+            InstrumentReference("FIGI", "BBG000B9XRY4"),
+            ExposureOrientation.POSITIVE,
+        ),
+        (resolution("public-evidence-a"),),
     )
 
 
 @pytest.fixture
 def other_proposal() -> DecisionProposal:
     return DecisionProposal.from_resolutions(
-        "reduce exposure", (resolution("public-evidence-a"),)
+        EconomicProposition(
+            InstrumentReference("FIGI", "BBG000B9XRY4"),
+            ExposureOrientation.FLAT,
+        ),
+        (resolution("public-evidence-a"),),
     )

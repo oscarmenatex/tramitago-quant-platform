@@ -3,7 +3,12 @@
 from dataclasses import FrozenInstanceError
 from decimal import Decimal
 
-from quant_platform.decision_model import DecisionProposal
+from quant_platform.core import InstrumentReference
+from quant_platform.decision_model import (
+    DecisionProposal,
+    EconomicProposition,
+    ExposureOrientation,
+)
 from quant_platform.risk import (
     InconsistentRiskConstraintsError,
     RiskConstraint,
@@ -27,7 +32,11 @@ def _resolution(publication_id: str) -> ResolutionResult:
 
 def main() -> None:
     proposal = DecisionProposal.from_resolutions(
-        "maintain current exposure", (_resolution("resolved-evidence-a"),)
+        EconomicProposition(
+            InstrumentReference("FIGI", "BBG000B9XRY4"),
+            ExposureOrientation.POSITIVE,
+        ),
+        (_resolution("resolved-evidence-a"),),
     )
     original_identity = proposal.semantic_identity
     context = ("exposure-state:42", "market-state:17")

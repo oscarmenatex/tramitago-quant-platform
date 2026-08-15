@@ -1,7 +1,11 @@
 from decimal import Decimal
 
 from quant_platform.core import CurrencyReference, InstrumentReference
-from quant_platform.decision_model import DecisionProposal
+from quant_platform.decision_model import (
+    DecisionProposal,
+    EconomicProposition,
+    ExposureOrientation,
+)
 from quant_platform.portfolio import (
     DuplicatePortfolioComponentError,
     InvalidPortfolioComponentError,
@@ -48,7 +52,8 @@ def main() -> None:
     assert mixed != PortfolioState((PortfolioPosition(a, Decimal("3")),), cash)
 
     proposal = DecisionProposal.from_resolutions(
-        "target state", (resolution("portfolio-demo"),)
+        EconomicProposition(a, ExposureOrientation.POSITIVE),
+        (resolution("portfolio-demo"),),
     )
     conditional = RiskEvaluationResult(
         proposal,
