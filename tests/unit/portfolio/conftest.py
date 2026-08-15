@@ -3,7 +3,11 @@ from decimal import Decimal
 import pytest
 
 from quant_platform.core import CurrencyReference, InstrumentReference
-from quant_platform.decision_model import DecisionProposal
+from quant_platform.decision_model import (
+    DecisionProposal,
+    EconomicProposition,
+    ExposureOrientation,
+)
 from quant_platform.portfolio import PortfolioPosition, PortfolioState
 from quant_platform.risk import RiskEvaluationOutcome, RiskEvaluationResult
 from quant_platform.strategy_evaluation.resolution import ResolutionResult
@@ -31,9 +35,10 @@ def currency() -> CurrencyReference:
 
 
 @pytest.fixture
-def proposal() -> DecisionProposal:
+def proposal(instrument: InstrumentReference) -> DecisionProposal:
     return DecisionProposal.from_resolutions(
-        "maintain exposure", (resolution("portfolio-evidence"),)
+        EconomicProposition(instrument, ExposureOrientation.POSITIVE),
+        (resolution("portfolio-evidence"),),
     )
 
 
