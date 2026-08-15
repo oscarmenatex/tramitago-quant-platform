@@ -1,19 +1,30 @@
 """Public domain contracts owned by the Risk capability."""
 
 from .exceptions import (
-    InconsistentRiskConditionsError,
+    InconsistentRiskConstraintsError,
     InvalidDecisionProposalError,
     InvalidEvaluationOutcomeError,
+    InvalidRiskConstraintError,
+    InvalidRiskContextReferenceError,
     InvalidRiskEvaluationBasisReferenceError,
     RiskEvaluationResultError,
 )
-from .risk_evaluation_result import RiskEvaluationOutcome, RiskEvaluationResult
+from .risk_evaluation_result import (
+    RiskConstraint,
+    RiskConstraintKind,
+    RiskEvaluationOutcome,
+    RiskEvaluationResult,
+)
 
 __all__ = [
-    "InconsistentRiskConditionsError",
+    "InconsistentRiskConstraintsError",
     "InvalidDecisionProposalError",
     "InvalidEvaluationOutcomeError",
+    "InvalidRiskConstraintError",
+    "InvalidRiskContextReferenceError",
     "InvalidRiskEvaluationBasisReferenceError",
+    "RiskConstraint",
+    "RiskConstraintKind",
     "RiskEvaluationOutcome",
     "RiskEvaluationResult",
     "RiskEvaluationResultError",

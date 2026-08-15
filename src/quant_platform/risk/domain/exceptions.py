@@ -13,18 +13,28 @@ class InvalidEvaluationOutcomeError(RiskEvaluationResultError):
     """The evaluation outcome is absent or outside the authorized contract."""
 
 
-class InconsistentRiskConditionsError(RiskEvaluationResultError):
-    """The outcome and public Risk conditions are structurally inconsistent."""
+class InvalidRiskConstraintError(RiskEvaluationResultError):
+    """A public Risk constraint is structurally invalid."""
+
+
+class InconsistentRiskConstraintsError(RiskEvaluationResultError):
+    """The outcome and public Risk constraints are structurally inconsistent."""
 
 
 class InvalidRiskEvaluationBasisReferenceError(RiskEvaluationResultError):
     """The Risk Evaluation Basis Reference is absent or invalid."""
 
 
+class InvalidRiskContextReferenceError(RiskEvaluationResultError):
+    """A Risk context reference is absent or structurally invalid."""
+
+
 __all__ = [
-    "InconsistentRiskConditionsError",
+    "InconsistentRiskConstraintsError",
     "InvalidDecisionProposalError",
     "InvalidEvaluationOutcomeError",
+    "InvalidRiskConstraintError",
+    "InvalidRiskContextReferenceError",
     "InvalidRiskEvaluationBasisReferenceError",
     "RiskEvaluationResultError",
 ]

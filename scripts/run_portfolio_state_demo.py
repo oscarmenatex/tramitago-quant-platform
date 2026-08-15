@@ -3,10 +3,19 @@ from decimal import Decimal
 from quant_platform.core import CurrencyReference, InstrumentReference
 from quant_platform.decision_model import DecisionProposal
 from quant_platform.portfolio import (
-    DuplicatePortfolioComponentError, InvalidPortfolioComponentError,
-    InvalidPortfolioTraceabilityError, MonetaryBalance, PortfolioPosition, PortfolioState,
+    DuplicatePortfolioComponentError,
+    InvalidPortfolioComponentError,
+    InvalidPortfolioTraceabilityError,
+    MonetaryBalance,
+    PortfolioPosition,
+    PortfolioState,
 )
-from quant_platform.risk import RiskEvaluationOutcome, RiskEvaluationResult
+from quant_platform.risk import (
+    RiskConstraint,
+    RiskConstraintKind,
+    RiskEvaluationOutcome,
+    RiskEvaluationResult,
+)
 from quant_platform.strategy_evaluation.resolution import ResolutionResult
 
 
@@ -33,21 +42,56 @@ def main() -> None:
     assert empty == PortfolioState() and hash(empty) == hash(PortfolioState())
     mixed = PortfolioState(positions, cash)
     equivalent = PortfolioState(tuple(reversed(positions)), cash)
-    assert mixed == equivalent and mixed.semantic_identity == equivalent.semantic_identity
+    assert (
+        mixed == equivalent and mixed.semantic_identity == equivalent.semantic_identity
+    )
     assert mixed != PortfolioState((PortfolioPosition(a, Decimal("3")),), cash)
 
     proposal = DecisionProposal.from_resolutions(
         "target state", (resolution("portfolio-demo"),)
     )
-    conditional = RiskEvaluationResult(proposal, RiskEvaluationOutcome.CONDITIONALLY_ACCEPTED, "risk-v1", ("hedge",))
-    target = PortfolioState(positions, cash, decision_proposal=proposal, risk_evaluation_result=conditional, current_portfolio_state=positions_only)
-    assert target.decision_proposal is proposal and target.risk_evaluation_result is conditional
+    conditional = RiskEvaluationResult(
+        proposal,
+        RiskEvaluationOutcome.CONDITIONALLY_ACCEPTED,
+        "risk-v1",
+        (
+            RiskConstraint(
+                RiskConstraintKind.MAX_EXPOSURE, Decimal("0.25"), "NAV_RATIO"
+            ),
+        ),
+    )
+    target = PortfolioState(
+        positions,
+        cash,
+        decision_proposal=proposal,
+        risk_evaluation_result=conditional,
+        current_portfolio_state=positions_only,
+    )
+    assert (
+        target.decision_proposal is proposal
+        and target.risk_evaluation_result is conditional
+    )
 
     for action, error in (
         (lambda: PortfolioPosition(a, Decimal("0")), InvalidPortfolioComponentError),
         (lambda: MonetaryBalance(usd, Decimal("0")), InvalidPortfolioComponentError),
-        (lambda: PortfolioState((PortfolioPosition(a, Decimal("1")), PortfolioPosition(a, Decimal("2")))), DuplicatePortfolioComponentError),
-        (lambda: PortfolioState(positions, decision_proposal=proposal, risk_evaluation_result=RiskEvaluationResult(proposal, RiskEvaluationOutcome.REJECTED, "risk-v1"), current_portfolio_state=positions_only), InvalidPortfolioTraceabilityError),
+        (
+            lambda: PortfolioState(
+                (PortfolioPosition(a, Decimal("1")), PortfolioPosition(a, Decimal("2")))
+            ),
+            DuplicatePortfolioComponentError,
+        ),
+        (
+            lambda: PortfolioState(
+                positions,
+                decision_proposal=proposal,
+                risk_evaluation_result=RiskEvaluationResult(
+                    proposal, RiskEvaluationOutcome.REJECTED, "risk-v1"
+                ),
+                current_portfolio_state=positions_only,
+            ),
+            InvalidPortfolioTraceabilityError,
+        ),
     ):
         try:
             action()
