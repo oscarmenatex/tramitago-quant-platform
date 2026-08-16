@@ -1,4 +1,4 @@
-"""Public error raised by the Operational Admission capability."""
+"""Public error raised during operational admission recognition."""
 
 
 class OperationalAdmissionDomainError(RuntimeError):

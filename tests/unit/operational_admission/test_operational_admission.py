@@ -126,6 +126,21 @@ def test_boundary_must_provide_an_observation_not_a_decision() -> None:
         recognize_admission(_submission(), boundary)
 
 
+@pytest.mark.parametrize(
+    ("admitted", "rejected"),
+    [(1, False), (False, 0), ("yes", False), (False, None)],
+)
+def test_observation_requires_exact_boolean_evidence(
+    admitted: object,
+    rejected: object,
+) -> None:
+    with pytest.raises(OperationalAdmissionDomainError):
+        OperationalAdmissionObservation(  # type: ignore[arg-type]
+            admitted=admitted,
+            rejected=rejected,
+        )
+
+
 def test_distinct_boundaries_are_contractually_substitutable() -> None:
     class ComputedBoundary:
         def observe(

@@ -1,4 +1,4 @@
-"""Public API for the Operational Admission capability."""
+"""Public API for admission recognition within Execution."""
 
 from .domain import (
     AdmissionDecision,
