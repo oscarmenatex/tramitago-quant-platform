@@ -21,7 +21,11 @@ def test_public_api_is_exactly_the_authorized_contract() -> None:
 
 
 def test_contracts_reuse_preceding_public_types() -> None:
-    assert OperationalMaterialization.__annotations__["operation"] is InvestmentOperation
+    assert OperationalMaterialization.__annotations__["occurrence_id"] is str
+    assert OperationalMaterializationObservation.__annotations__["occurrence_id"] is str
+    assert (
+        OperationalMaterialization.__annotations__["operation"] is InvestmentOperation
+    )
     assert (
         OperationalMaterializationObservation.__annotations__["operation"]
         is InvestmentOperation
@@ -32,7 +36,7 @@ def test_contracts_reuse_preceding_public_types() -> None:
     )
 
 
-def test_capability_has_no_productive_infrastructure_or_later_responsibilities() -> None:
+def test_execution_responsibility_has_no_infrastructure_or_later_work() -> None:
     root = Path("src/quant_platform/operational_materialization")
     paths = tuple(root.rglob("*"))
     forbidden_names = {
@@ -71,3 +75,17 @@ def test_capability_has_no_productive_infrastructure_or_later_responsibilities()
         for path in Path("src/quant_platform/operational_admission").rglob("*.py")
     )
     assert "quant_platform.operational_materialization" not in admission_source
+
+
+def test_materialization_is_described_as_an_execution_responsibility() -> None:
+    package_source = Path(
+        "src/quant_platform/operational_materialization/__init__.py"
+    ).read_text(encoding="utf-8")
+    domain_source = Path(
+        "src/quant_platform/operational_materialization/domain/__init__.py"
+    ).read_text(encoding="utf-8")
+
+    assert "within Execution" in package_source
+    assert "within Execution" in domain_source
+    assert "Materialization capability" not in package_source
+    assert "owned by Operational Materialization" not in domain_source

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from itertools import count
 
 import pytest
 
@@ -18,8 +19,11 @@ def operation() -> InvestmentOperation:
 
 @pytest.fixture
 def materialization_factory(operation: InvestmentOperation):
+    occurrence_sequence = count(1)
+
     def create(quantity: str) -> OperationalMaterialization:
         return OperationalMaterialization(
+            f"interpretation-{next(occurrence_sequence)}",
             operation,
             Decimal(quantity),
             Decimal("12.34"),

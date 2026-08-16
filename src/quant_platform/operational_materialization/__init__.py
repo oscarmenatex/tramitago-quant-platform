@@ -1,4 +1,4 @@
-"""Public API for the Operational Materialization capability."""
+"""Public API for materialization recognition within Execution."""
 
 from .domain import (
     OperationalMaterialization,

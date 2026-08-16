@@ -1,4 +1,5 @@
 from decimal import Decimal
+from itertools import count
 
 import pytest
 
@@ -19,6 +20,8 @@ def usd() -> CurrencyReference:
 
 @pytest.fixture
 def materialization_factory(instrument, usd):
+    occurrence_sequence = count(1)
+
     def create(
         direction: OperationDirection,
         materialized_quantity: str,
@@ -32,7 +35,11 @@ def materialization_factory(instrument, usd):
             source_instrument, direction, Decimal(operation_quantity)
         )
         return OperationalMaterialization(
-            operation, Decimal(materialized_quantity), Decimal(price), currency
+            f"economic-consequence-{next(occurrence_sequence)}",
+            operation,
+            Decimal(materialized_quantity),
+            Decimal(price),
+            currency,
         )
 
     return create

@@ -2,6 +2,7 @@
 """Deterministic public demo of materialization interpretation."""
 
 from decimal import Decimal
+from itertools import count
 
 from quant_platform.core import CurrencyReference, InstrumentReference
 from quant_platform.execution import InvestmentOperation, OperationDirection
@@ -12,11 +13,18 @@ from quant_platform.operational_materialization_interpretation import (
 )
 
 
+_OCCURRENCES = count(1)
+
+
 def _materialization(
     operation: InvestmentOperation, quantity: str
 ) -> OperationalMaterialization:
     return OperationalMaterialization(
-        operation, Decimal(quantity), Decimal("10"), CurrencyReference("USD")
+        f"interpretation-demo-{next(_OCCURRENCES)}",
+        operation,
+        Decimal(quantity),
+        Decimal("10"),
+        CurrencyReference("USD"),
     )
 
 
@@ -42,7 +50,9 @@ def main() -> None:
         Decimal("1"),
     )
     try:
-        interpret_materializations(operation, [_materialization(foreign_operation, "1")])
+        interpret_materializations(
+            operation, [_materialization(foreign_operation, "1")]
+        )
     except OperationalMaterializationInterpretationDomainError as error:
         print("expected domain error:", type(error).__name__)
     else:

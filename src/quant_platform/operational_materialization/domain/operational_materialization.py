@@ -6,7 +6,7 @@ from typing import Protocol
 
 from quant_platform.core import CurrencyReference
 from quant_platform.execution import InvestmentOperation
-from quant_platform.operational_admission import AdmissionDecision, OperationalAdmission
+from quant_platform.operational_admission import OperationalAdmission
 
 from .exceptions import OperationalMaterializationDomainError
 
@@ -15,6 +15,7 @@ from .exceptions import OperationalMaterializationDomainError
 class OperationalMaterializationObservation:
     """Normalized candidate evidence, before contractual recognition."""
 
+    occurrence_id: str
     operation: InvestmentOperation
     quantity: Decimal
     price: Decimal
@@ -35,30 +36,38 @@ class OperationalMaterializationBoundary(Protocol):
 class OperationalMaterialization:
     """Immutable recognized fact for one individual material occurrence."""
 
+    occurrence_id: str
     operation: InvestmentOperation
     quantity: Decimal
     price: Decimal
     currency: CurrencyReference
 
     def __post_init__(self) -> None:
-        _validate_evidence(self.operation, self.quantity, self.price, self.currency)
+        _validate_evidence(
+            self.occurrence_id,
+            self.operation,
+            self.quantity,
+            self.price,
+            self.currency,
+        )
 
 
 def _validate_evidence(
+    occurrence_id: object,
     operation: object,
     quantity: object,
     price: object,
     currency: object,
 ) -> None:
+    if type(occurrence_id) is not str or not occurrence_id.strip():
+        raise OperationalMaterializationDomainError(
+            "Materialization requires one non-empty occurrence identity."
+        )
     if not isinstance(operation, InvestmentOperation):
         raise OperationalMaterializationDomainError(
             "Materialization requires one public InvestmentOperation."
         )
-    if (
-        not isinstance(quantity, Decimal)
-        or not quantity.is_finite()
-        or quantity <= 0
-    ):
+    if not isinstance(quantity, Decimal) or not quantity.is_finite() or quantity <= 0:
         raise OperationalMaterializationDomainError(
             "Materialization quantity must be an exact, finite, positive Decimal."
         )
@@ -81,11 +90,6 @@ def recognize_materialization(
         raise OperationalMaterializationDomainError(
             "recognize_materialization requires one public OperationalAdmission."
         )
-    if admission.decision is not AdmissionDecision.ADMITTED:
-        raise OperationalMaterializationDomainError(
-            "Only an ADMITTED operational flow can produce a materialization."
-        )
-
     try:
         observation = boundary.observe(admission)
     except Exception as error:
@@ -101,20 +105,20 @@ def recognize_materialization(
         )
 
     _validate_evidence(
+        observation.occurrence_id,
         observation.operation,
         observation.quantity,
         observation.price,
         observation.currency,
     )
-    admitted_operations = (
-        admission.submission.operational_request.operations
-    )
+    admitted_operations = admission.submission.operational_request.operations
     if not any(operation is observation.operation for operation in admitted_operations):
         raise OperationalMaterializationDomainError(
             "The observed operation does not belong to the admitted flow."
         )
 
     return OperationalMaterialization(
+        occurrence_id=observation.occurrence_id,
         operation=observation.operation,
         quantity=observation.quantity,
         price=observation.price,

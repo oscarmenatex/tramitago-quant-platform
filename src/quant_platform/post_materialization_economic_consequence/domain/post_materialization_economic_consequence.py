@@ -13,6 +13,7 @@ from .exceptions import PostMaterializationEconomicConsequenceDomainError
 
 def _source_key(source: OperationalMaterialization) -> tuple[object, ...]:
     return (
+        source.occurrence_id,
         source.operation.instrument.semantic_identity,
         source.operation.direction.value,
         source.operation.quantity,
@@ -33,9 +34,7 @@ def _derive_state(
     sources: tuple[OperationalMaterialization, ...],
 ) -> PortfolioState:
     positions = {item.instrument: item.quantity for item in previous_state.positions}
-    balances = {
-        item.currency: item.amount for item in previous_state.monetary_balances
-    }
+    balances = {item.currency: item.amount for item in previous_state.monetary_balances}
 
     for source in sources:
         position_delta = source.quantity

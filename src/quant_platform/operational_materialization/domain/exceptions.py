@@ -1,4 +1,4 @@
-"""Public error raised by the Operational Materialization capability."""
+"""Public error raised during operational materialization recognition."""
 
 
 class OperationalMaterializationDomainError(RuntimeError):

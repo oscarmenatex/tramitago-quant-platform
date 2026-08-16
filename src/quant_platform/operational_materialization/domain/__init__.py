@@ -1,4 +1,4 @@
-"""Domain contracts owned by Operational Materialization."""
+"""Domain contracts for materialization recognition within Execution."""
 
 from .exceptions import OperationalMaterializationDomainError
 from .operational_materialization import (
