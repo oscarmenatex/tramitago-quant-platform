@@ -6,6 +6,7 @@ from decimal import Decimal
 from quant_platform.core import CurrencyReference, InstrumentReference
 from quant_platform.execution import OperationalIntent
 from quant_platform.operational_admission import (
+    OperationalAdmissionDomainError,
     OperationalAdmissionObservation,
     recognize_admission,
 )
@@ -23,13 +24,15 @@ from execution_demo_support import target_from_transition
 class ControlledAdmissionBoundary:
     """Demo-only boundary that normalizes evidence without deciding admission."""
 
+    def __init__(self, observation: OperationalAdmissionObservation) -> None:
+        self.observation = observation
+
     def observe(
         self, submission: OperationalSubmission
     ) -> OperationalAdmissionObservation:
         print("boundary received submission: yes")
-        observation = OperationalAdmissionObservation(admitted=True)
-        print("boundary produced normalized observation:", observation)
-        return observation
+        print("boundary produced normalized observation:", self.observation)
+        return self.observation
 
 
 def main() -> None:
@@ -54,9 +57,27 @@ def main() -> None:
     )
 
     print("submission prepared:", submission)
-    admission = recognize_admission(submission, ControlledAdmissionBoundary())
-    print("Operational Admission recognized decision:", admission.decision.value)
-    print("admission preserves submission:", admission.submission is submission)
+    for label, observation in (
+        ("ADMITTED", OperationalAdmissionObservation(admitted=True)),
+        ("REJECTED", OperationalAdmissionObservation(rejected=True)),
+    ):
+        admission = recognize_admission(
+            submission,
+            ControlledAdmissionBoundary(observation),
+        )
+        print(label, "recognized decision:", admission.decision.value)
+        print(label, "preserves submission:", admission.submission is submission)
+
+    try:
+        recognize_admission(
+            submission,
+            ControlledAdmissionBoundary(OperationalAdmissionObservation()),
+        )
+    except OperationalAdmissionDomainError:
+        print("insufficient evidence produced no admission: yes")
+    else:
+        raise AssertionError("Insufficient evidence must not produce an admission.")
+
     print("Operational Admission demo passed.")
 
 

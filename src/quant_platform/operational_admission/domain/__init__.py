@@ -1,4 +1,4 @@
-"""Domain contracts owned by Operational Admission."""
+"""Domain contracts for admission recognition within Execution."""
 
 from .exceptions import OperationalAdmissionDomainError
 from .operational_admission import (

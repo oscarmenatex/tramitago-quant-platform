@@ -70,6 +70,20 @@ def test_dependency_direction_and_infrastructure_independence() -> None:
     assert "quant_platform.operational_admission" not in submission_source
 
 
+def test_admission_is_described_as_an_execution_responsibility() -> None:
+    package_source = Path(
+        "src/quant_platform/operational_admission/__init__.py"
+    ).read_text(encoding="utf-8")
+    domain_source = Path(
+        "src/quant_platform/operational_admission/domain/__init__.py"
+    ).read_text(encoding="utf-8")
+
+    assert "within Execution" in package_source
+    assert "within Execution" in domain_source
+    assert "Admission capability" not in package_source
+    assert "owned by Operational Admission" not in domain_source
+
+
 def test_no_economic_materialization_or_later_responsibilities_are_modeled() -> None:
     source = "\n".join(
         path.read_text(encoding="utf-8")
