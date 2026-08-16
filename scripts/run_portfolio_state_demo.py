@@ -68,13 +68,14 @@ def main() -> None:
     target = PortfolioState(
         positions,
         cash,
-        decision_proposal=proposal,
-        risk_evaluation_result=conditional,
         current_portfolio_state=positions_only,
+        considered_risk_evaluation_results=(conditional,),
+        contributing_risk_evaluation_results=(conditional,),
+        determination_basis_reference="demo-authority",
     )
     assert (
-        target.decision_proposal is proposal
-        and target.risk_evaluation_result is conditional
+        target.contributing_risk_evaluation_results == (conditional,)
+        and target.current_portfolio_state is positions_only
     )
 
     for action, error in (
@@ -89,11 +90,13 @@ def main() -> None:
         (
             lambda: PortfolioState(
                 positions,
-                decision_proposal=proposal,
-                risk_evaluation_result=RiskEvaluationResult(
-                    proposal, RiskEvaluationOutcome.REJECTED, "risk-v1"
+                considered_risk_evaluation_results=(
+                    RiskEvaluationResult(
+                        proposal, RiskEvaluationOutcome.REJECTED, "risk-v1"
+                    ),
                 ),
                 current_portfolio_state=positions_only,
+                determination_basis_reference="demo-authority",
             ),
             InvalidPortfolioTraceabilityError,
         ),

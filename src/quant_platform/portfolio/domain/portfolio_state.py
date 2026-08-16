@@ -7,7 +7,6 @@ from hashlib import sha256
 import json
 
 from quant_platform.core import CurrencyReference, InstrumentReference
-from quant_platform.decision_model import DecisionProposal
 from quant_platform.risk import RiskEvaluationOutcome, RiskEvaluationResult
 
 from .exceptions import (
@@ -59,9 +58,10 @@ class MonetaryBalance:
 class PortfolioState:
     positions: tuple[PortfolioPosition, ...]
     monetary_balances: tuple[MonetaryBalance, ...]
-    decision_proposal: DecisionProposal | None
-    risk_evaluation_result: RiskEvaluationResult | None
     current_portfolio_state: "PortfolioState | None"
+    considered_risk_evaluation_results: tuple[RiskEvaluationResult, ...]
+    contributing_risk_evaluation_results: tuple[RiskEvaluationResult, ...]
+    determination_basis_reference: str | None
     semantic_identity: str
 
     def __init__(
@@ -69,9 +69,10 @@ class PortfolioState:
         positions: Iterable[PortfolioPosition] = (),
         monetary_balances: Iterable[MonetaryBalance] = (),
         *,
-        decision_proposal: DecisionProposal | None = None,
-        risk_evaluation_result: RiskEvaluationResult | None = None,
         current_portfolio_state: "PortfolioState | None" = None,
+        considered_risk_evaluation_results: Iterable[RiskEvaluationResult] = (),
+        contributing_risk_evaluation_results: Iterable[RiskEvaluationResult] = (),
+        determination_basis_reference: str | None = None,
     ) -> None:
         try:
             supplied_positions = tuple(positions)
@@ -88,7 +89,6 @@ class PortfolioState:
             raise InvalidPortfolioComponentError(
                 "Monetary balances must contain only MonetaryBalance values."
             )
-
         instruments = [item.instrument for item in supplied_positions]
         currencies = [item.currency for item in supplied_balances]
         if len(set(instruments)) != len(instruments):
@@ -99,68 +99,107 @@ class PortfolioState:
             raise DuplicatePortfolioComponentError(
                 "Only one monetary balance per currency is allowed."
             )
-
         canonical_positions = tuple(
-            sorted(supplied_positions, key=lambda item: item.instrument.semantic_identity)
+            sorted(
+                supplied_positions, key=lambda item: item.instrument.semantic_identity
+            )
         )
         canonical_balances = tuple(
             sorted(supplied_balances, key=lambda item: item.currency.semantic_identity)
         )
-        self._validate_traceability(
-            decision_proposal, risk_evaluation_result, current_portfolio_state
+        considered, contributing, basis = self._validate_provenance(
+            current_portfolio_state,
+            considered_risk_evaluation_results,
+            contributing_risk_evaluation_results,
+            determination_basis_reference,
         )
-        identity = self._identity_for(canonical_positions, canonical_balances)
         object.__setattr__(self, "positions", canonical_positions)
         object.__setattr__(self, "monetary_balances", canonical_balances)
-        object.__setattr__(self, "decision_proposal", decision_proposal)
-        object.__setattr__(self, "risk_evaluation_result", risk_evaluation_result)
         object.__setattr__(self, "current_portfolio_state", current_portfolio_state)
-        object.__setattr__(self, "semantic_identity", identity)
+        object.__setattr__(self, "considered_risk_evaluation_results", considered)
+        object.__setattr__(self, "contributing_risk_evaluation_results", contributing)
+        object.__setattr__(self, "determination_basis_reference", basis)
+        object.__setattr__(
+            self,
+            "semantic_identity",
+            self._identity_for(canonical_positions, canonical_balances),
+        )
 
     @staticmethod
-    def _validate_traceability(
-        proposal: DecisionProposal | None,
-        risk_result: RiskEvaluationResult | None,
-        current_state: "PortfolioState | None",
-    ) -> None:
-        values = proposal, risk_result, current_state
-        if all(item is None for item in values):
-            return
-        if not isinstance(proposal, DecisionProposal):
+    def _validate_provenance(
+        current: "PortfolioState | None",
+        considered: Iterable[RiskEvaluationResult],
+        contributing: Iterable[RiskEvaluationResult],
+        basis: str | None,
+    ) -> tuple[
+        tuple[RiskEvaluationResult, ...], tuple[RiskEvaluationResult, ...], str | None
+    ]:
+        try:
+            considered_values = tuple(considered)
+            contributing_values = tuple(contributing)
+        except TypeError:
             raise InvalidPortfolioTraceabilityError(
-                "Complete traceability requires a public DecisionProposal."
-            )
-        if not isinstance(risk_result, RiskEvaluationResult):
+                "Target provenance collections must be finite iterables."
+            ) from None
+        present = (
+            current is not None
+            or considered_values
+            or contributing_values
+            or basis is not None
+        )
+        if not present:
+            return (), (), None
+        if not isinstance(current, PortfolioState):
             raise InvalidPortfolioTraceabilityError(
-                "Complete traceability requires a public RiskEvaluationResult."
+                "Target provenance requires a current PortfolioState."
             )
-        if not isinstance(current_state, PortfolioState):
+        if not considered_values or any(
+            not isinstance(x, RiskEvaluationResult) for x in considered_values
+        ):
             raise InvalidPortfolioTraceabilityError(
-                "Complete traceability requires a current PortfolioState."
+                "Target provenance requires considered Risk results."
             )
-        if risk_result.decision_proposal != proposal:
+        if any(x.outcome is RiskEvaluationOutcome.REJECTED for x in considered_values):
             raise InvalidPortfolioTraceabilityError(
-                "RiskEvaluationResult must correspond to DecisionProposal."
+                "Target provenance cannot contain REJECTED Risk results."
             )
-        if risk_result.outcome is RiskEvaluationOutcome.REJECTED:
+        if any(not isinstance(x, RiskEvaluationResult) for x in contributing_values):
             raise InvalidPortfolioTraceabilityError(
-                "A REJECTED Risk result cannot produce a Portfolio State."
+                "Target contributors must be Risk results."
             )
+        if len(set(considered_values)) != len(considered_values) or len(
+            set(contributing_values)
+        ) != len(contributing_values):
+            raise InvalidPortfolioTraceabilityError(
+                "Target provenance cannot contain duplicates."
+            )
+        if not set(contributing_values).issubset(set(considered_values)):
+            raise InvalidPortfolioTraceabilityError("Contributors must be considered.")
+        if not isinstance(basis, str) or not basis.strip():
+            raise InvalidPortfolioTraceabilityError(
+                "A non-empty determination basis is required."
+            )
+
+        def canonical(
+            values: tuple[RiskEvaluationResult, ...],
+        ) -> tuple[RiskEvaluationResult, ...]:
+            return tuple(sorted(values, key=lambda x: x.semantic_identity))
+
+        return canonical(considered_values), canonical(contributing_values), basis
 
     @staticmethod
     def _identity_for(
-        positions: tuple[PortfolioPosition, ...],
-        balances: tuple[MonetaryBalance, ...],
+        positions: tuple[PortfolioPosition, ...], balances: tuple[MonetaryBalance, ...]
     ) -> str:
         canonical = json.dumps(
             {
                 "monetary_balances": [
-                    [item.currency.semantic_identity, _canonical_decimal(item.amount)]
-                    for item in balances
+                    [x.currency.semantic_identity, _canonical_decimal(x.amount)]
+                    for x in balances
                 ],
                 "positions": [
-                    [item.instrument.semantic_identity, _canonical_decimal(item.quantity)]
-                    for item in positions
+                    [x.instrument.semantic_identity, _canonical_decimal(x.quantity)]
+                    for x in positions
                 ],
             },
             ensure_ascii=True,

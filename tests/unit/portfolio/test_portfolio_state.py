@@ -18,7 +18,6 @@ from quant_platform.risk import (
     RiskEvaluationOutcome,
     RiskEvaluationResult,
 )
-from quant_platform.decision_model import EconomicProposition, ExposureOrientation
 
 
 def test_valid_positions_only(instrument: InstrumentReference) -> None:
@@ -65,9 +64,10 @@ def test_empty_state_can_act_as_current(
     current = PortfolioState()
     target = PortfolioState(
         (PortfolioPosition(instrument, Decimal("1")),),
-        decision_proposal=proposal,
-        risk_evaluation_result=accepted,
         current_portfolio_state=current,
+        considered_risk_evaluation_results=(accepted,),
+        contributing_risk_evaluation_results=(accepted,),
+        determination_basis_reference="test-authority",
     )
 
     assert target.current_portfolio_state is current
@@ -77,13 +77,14 @@ def test_empty_target_preserves_valid_traceability(
     proposal, accepted, current_state
 ) -> None:
     target = PortfolioState(
-        decision_proposal=proposal,
-        risk_evaluation_result=accepted,
         current_portfolio_state=current_state,
+        considered_risk_evaluation_results=(accepted,),
+        contributing_risk_evaluation_results=(accepted,),
+        determination_basis_reference="test-authority",
     )
 
-    assert target.decision_proposal is proposal
-    assert target.risk_evaluation_result is accepted
+    assert target.considered_risk_evaluation_results == (accepted,)
+    assert target.contributing_risk_evaluation_results == (accepted,)
     assert target.current_portfolio_state is current_state
 
 
@@ -92,9 +93,9 @@ def test_empty_target_rejects_invalid_traceability(proposal, current_state) -> N
 
     with pytest.raises(InvalidPortfolioTraceabilityError):
         PortfolioState(
-            decision_proposal=proposal,
-            risk_evaluation_result=rejected,
             current_portfolio_state=current_state,
+            considered_risk_evaluation_results=(rejected,),
+            determination_basis_reference="test-authority",
         )
 
 
@@ -221,38 +222,16 @@ def test_traceability_is_preserved_and_excluded_from_identity(
     components = (PortfolioPosition(instrument, Decimal("2")),)
     traced = PortfolioState(
         components,
-        decision_proposal=proposal,
-        risk_evaluation_result=accepted,
         current_portfolio_state=current_state,
+        considered_risk_evaluation_results=(accepted,),
+        contributing_risk_evaluation_results=(accepted,),
+        determination_basis_reference="test-authority",
     )
     plain = PortfolioState(components)
     assert traced == plain and hash(traced) == hash(plain)
-    assert traced.decision_proposal is proposal
-    assert traced.risk_evaluation_result is accepted
+    assert traced.considered_risk_evaluation_results == (accepted,)
+    assert traced.contributing_risk_evaluation_results == (accepted,)
     assert traced.current_portfolio_state is current_state
-
-
-def test_rejects_incoherent_proposal(
-    instrument, proposal, accepted, current_state
-) -> None:
-    other = object.__new__(type(proposal))
-    object.__setattr__(
-        other,
-        "economic_proposition",
-        EconomicProposition(
-            proposal.economic_proposition.instrument,
-            ExposureOrientation.NEGATIVE,
-        ),
-    )
-    object.__setattr__(other, "evidence_references", proposal.evidence_references)
-    object.__setattr__(other, "semantic_identity", "other")
-    with pytest.raises(InvalidPortfolioTraceabilityError):
-        PortfolioState(
-            (PortfolioPosition(instrument, Decimal("2")),),
-            decision_proposal=other,
-            risk_evaluation_result=accepted,
-            current_portfolio_state=current_state,
-        )
 
 
 def test_rejects_rejected_result(instrument, proposal, current_state) -> None:
@@ -260,9 +239,9 @@ def test_rejects_rejected_result(instrument, proposal, current_state) -> None:
     with pytest.raises(InvalidPortfolioTraceabilityError):
         PortfolioState(
             (PortfolioPosition(instrument, Decimal("2")),),
-            decision_proposal=proposal,
-            risk_evaluation_result=rejected,
             current_portfolio_state=current_state,
+            considered_risk_evaluation_results=(rejected,),
+            determination_basis_reference="test-authority",
         )
 
 
@@ -277,9 +256,10 @@ def test_accepts_conditionally_accepted_result(
     )
     state = PortfolioState(
         (PortfolioPosition(instrument, Decimal("2")),),
-        decision_proposal=proposal,
-        risk_evaluation_result=conditional,
         current_portfolio_state=current_state,
+        considered_risk_evaluation_results=(conditional,),
+        contributing_risk_evaluation_results=(conditional,),
+        determination_basis_reference="test-authority",
     )
-    assert state.risk_evaluation_result is conditional
-    assert state.risk_evaluation_result.constraints == (constraint,)
+    assert state.contributing_risk_evaluation_results == (conditional,)
+    assert state.contributing_risk_evaluation_results[0].constraints == (constraint,)
