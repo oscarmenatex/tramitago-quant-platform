@@ -3,7 +3,7 @@ from pathlib import Path
 import quant_platform.execution as execution
 from quant_platform.core import InstrumentReference
 from quant_platform.execution import InvestmentOperation, OperationalIntent
-from quant_platform.portfolio_transition import PortfolioTransition
+from quant_platform.portfolio import PortfolioState
 
 
 def test_public_api_is_limited_to_the_authorized_contract() -> None:
@@ -12,11 +12,12 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "InvestmentOperation",
         "OperationalIntent",
         "OperationDirection",
+        "prepare_operational_request",
     ]
 
 
 def test_public_contract_reuses_only_authorized_domain_contracts() -> None:
-    assert OperationalIntent.__annotations__["portfolio_transition"] is PortfolioTransition
+    assert OperationalIntent.__annotations__["target_portfolio_state"] is PortfolioState
     assert InvestmentOperation.__annotations__["instrument"] is InstrumentReference
 
 
@@ -42,7 +43,7 @@ def test_capability_contains_no_infrastructure_or_materialization_layers() -> No
     )
     forbidden_dependencies = (
         "quant_platform.decision_model",
-        "quant_platform.portfolio ",
         "quant_platform.risk",
+        "quant_platform.portfolio_transition",
     )
     assert not any(dependency in source for dependency in forbidden_dependencies)

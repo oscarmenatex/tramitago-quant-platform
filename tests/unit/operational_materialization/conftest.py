@@ -13,6 +13,7 @@ from quant_platform.portfolio_transition import (
     PortfolioPositionTransition,
     PortfolioTransition,
 )
+from tests.execution_planning_support import target_from_transition
 
 
 @pytest.fixture
@@ -33,5 +34,7 @@ def admission() -> OperationalAdmission:
         (PortfolioPositionTransition(instrument, Decimal("2")),),
         (PortfolioMonetaryTransition(currency, Decimal("-20")),),
     )
-    submission = OperationalSubmission(OperationalRequest(OperationalIntent(transition)))
+    submission = OperationalSubmission(
+        OperationalRequest(OperationalIntent(target_from_transition(transition)))
+    )
     return OperationalAdmission(submission, AdmissionDecision.ADMITTED)

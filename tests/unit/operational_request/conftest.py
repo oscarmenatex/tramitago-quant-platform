@@ -9,6 +9,7 @@ from quant_platform.portfolio_transition import (
     PortfolioPositionTransition,
     PortfolioTransition,
 )
+from tests.execution_planning_support import target_from_transition
 
 
 @pytest.fixture
@@ -35,4 +36,4 @@ def operational_intent() -> OperationalIntent:
             PortfolioPositionTransition(sold, Decimal("-2")),
         ),
     )
-    return OperationalIntent(transition)
+    return OperationalIntent(target_from_transition(transition))

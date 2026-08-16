@@ -1,73 +1,90 @@
 #!/usr/bin/env python3
-"""Deterministic demonstration of the Execution public contract."""
+"""Deterministic demonstration of Execution Operational Planning."""
 
 from decimal import Decimal
 
-from quant_platform.core import CurrencyReference, InstrumentReference
-from quant_platform.execution import OperationalIntent, OperationDirection
-from quant_platform.portfolio import MonetaryBalance, PortfolioPosition, PortfolioState
-from quant_platform.portfolio_transition import (
-    PortfolioMonetaryTransition,
-    PortfolioPositionTransition,
-    PortfolioTransition,
+from quant_platform.core import InstrumentReference
+from quant_platform.decision_model import (
+    DecisionProposal,
+    EconomicProposition,
+    ExposureOrientation,
 )
+from quant_platform.execution import OperationDirection, prepare_operational_request
+from quant_platform.portfolio import PortfolioPosition, PortfolioState
+from quant_platform.risk import (
+    RiskConstraint,
+    RiskConstraintKind,
+    RiskEvaluationOutcome,
+    RiskEvaluationResult,
+)
+from quant_platform.strategy_evaluation.resolution import ResolutionResult
+
+
+class PublicPublication:
+    def __init__(self, publication_id: str) -> None:
+        self.publication_id = publication_id
+
+
+def _risk(instrument: InstrumentReference) -> RiskEvaluationResult:
+    resolution = object.__new__(ResolutionResult)
+    object.__setattr__(resolution, "publication", PublicPublication("execution-demo"))
+    proposal = DecisionProposal.from_resolutions(
+        EconomicProposition(instrument, ExposureOrientation.POSITIVE), (resolution,)
+    )
+    return RiskEvaluationResult(
+        proposal,
+        RiskEvaluationOutcome.CONDITIONALLY_ACCEPTED,
+        "risk-demo-v1",
+        (RiskConstraint(RiskConstraintKind.MAX_EXECUTION_SIZE, Decimal("2"), "units"),),
+    )
+
+
+def _target(
+    current: PortfolioState, instrument: InstrumentReference, quantity: Decimal
+) -> PortfolioState:
+    result = _risk(instrument)
+    positions = () if quantity.is_zero() else (PortfolioPosition(instrument, quantity),)
+    return PortfolioState(
+        positions,
+        current_portfolio_state=current,
+        considered_risk_evaluation_results=(result,),
+        contributing_risk_evaluation_results=(result,),
+        determination_basis_reference="portfolio-demo-v1",
+    )
 
 
 def main() -> None:
-    bought = InstrumentReference("FIGI", "BUY-ME")
-    sold = InstrumentReference("FIGI", "SELL-ME")
-    usd = CurrencyReference("USD")
-    current = PortfolioState(
-        (
-            PortfolioPosition(bought, Decimal("1")),
-            PortfolioPosition(sold, Decimal("5")),
-        ),
-        (MonetaryBalance(usd, Decimal("100")),),
-    )
-    target = PortfolioState(
-        (
-            PortfolioPosition(bought, Decimal("4")),
-            PortfolioPosition(sold, Decimal("3")),
-        ),
-        (MonetaryBalance(usd, Decimal("80")),),
-    )
-    transition = PortfolioTransition(
-        current,
-        target,
-        (
-            PortfolioPositionTransition(bought, Decimal("3")),
-            PortfolioPositionTransition(sold, Decimal("-2")),
-        ),
-        (PortfolioMonetaryTransition(usd, Decimal("-20")),),
-    )
-    intent = OperationalIntent(transition)
+    instrument = InstrumentReference("FIGI", "PLAN-ME")
+    current = PortfolioState()
+    target = _target(current, instrument, Decimal("10"))
+    request = prepare_operational_request(target)
+    intent = request.operational_intent
+    constraint = target.contributing_risk_evaluation_results[0].constraints[0]
 
-    assert intent.portfolio_transition is transition
-    assert [operation.direction for operation in intent.operations] == [
-        OperationDirection.BUY,
-        OperationDirection.SELL,
-    ]
-    assert [operation.quantity for operation in intent.operations] == [
-        Decimal("3"),
-        Decimal("2"),
-    ]
-    assert len(intent.operations) == len(transition.position_transitions)
-    assert intent == OperationalIntent(transition)
-    print("origin:", intent.portfolio_transition.semantic_identity)
+    assert intent.target_portfolio_state is target
+    assert request.operations == intent.operations
+    assert len(request.operations) == 1
+    assert request.operations[0].direction is OperationDirection.BUY
+    assert request.operations[0].quantity == Decimal("10")
+    assert constraint.kind is RiskConstraintKind.MAX_EXECUTION_SIZE
+    assert constraint.limit == Decimal("2")
+
+    no_op_target = _target(target, instrument, Decimal("10"))
+    no_op_request = prepare_operational_request(no_op_target)
+    assert no_op_request.operations == ()
+
+    print("current:", current.semantic_identity)
+    print("target:", target.semantic_identity)
+    print("risk contributors:", len(target.contributing_risk_evaluation_results))
+    print("MAX_EXECUTION_SIZE:", constraint.limit, constraint.unit)
     print(
         "operations:",
-        [
-            (
-                operation.instrument.identification_value,
-                operation.direction.value,
-                str(operation.quantity),
-            )
-            for operation in intent.operations
-        ],
+        [(op.direction.value, str(op.quantity)) for op in request.operations],
     )
-    print("monetary operations: 0")
-    print("semantic_identity:", intent.semantic_identity)
-    print("Execution demo passed.")
+    print("intent:", intent.semantic_identity)
+    print("request operations:", len(request.operations))
+    print("no-op operations:", len(no_op_request.operations))
+    print("Execution Operational Planning demo passed.")
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ from quant_platform.portfolio_transition import (
     PortfolioPositionTransition,
     PortfolioTransition,
 )
+from execution_demo_support import target_from_transition
 
 
 class ControlledAdmissionBoundary:
@@ -48,7 +49,9 @@ def main() -> None:
         (PortfolioPositionTransition(instrument, Decimal("2")),),
         (PortfolioMonetaryTransition(currency, Decimal("-20")),),
     )
-    submission = OperationalSubmission(OperationalRequest(OperationalIntent(transition)))
+    submission = OperationalSubmission(
+        OperationalRequest(OperationalIntent(target_from_transition(transition)))
+    )
 
     print("submission prepared:", submission)
     admission = recognize_admission(submission, ControlledAdmissionBoundary())

@@ -13,6 +13,7 @@ from quant_platform.portfolio_transition import (
     PortfolioPositionTransition,
     PortfolioTransition,
 )
+from execution_demo_support import target_from_transition
 
 
 class ControlledPresentationBoundary:
@@ -44,7 +45,7 @@ def main() -> None:
         (PortfolioPositionTransition(instrument, Decimal("2")),),
         (PortfolioMonetaryTransition(currency, Decimal("-20")),),
     )
-    request = OperationalRequest(OperationalIntent(transition))
+    request = OperationalRequest(OperationalIntent(target_from_transition(transition)))
     boundary = ControlledPresentationBoundary()
 
     submission = submit(request, boundary)

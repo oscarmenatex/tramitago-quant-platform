@@ -3,106 +3,211 @@ from decimal import Decimal
 
 import pytest
 
+from quant_platform.core import CurrencyReference, InstrumentReference
+from quant_platform.decision_model import (
+    DecisionProposal,
+    EconomicProposition,
+    ExposureOrientation,
+)
 from quant_platform.execution import (
     ExecutionDomainError,
     InvestmentOperation,
     OperationalIntent,
     OperationDirection,
+    prepare_operational_request,
 )
-from quant_platform.core import InstrumentReference
-from quant_platform.portfolio_transition import PortfolioTransition
+from quant_platform.operational_request import OperationalRequest
+from quant_platform.portfolio import MonetaryBalance, PortfolioPosition, PortfolioState
+from quant_platform.risk import (
+    RiskConstraint,
+    RiskConstraintKind,
+    RiskEvaluationOutcome,
+    RiskEvaluationResult,
+)
+from quant_platform.strategy_evaluation.resolution import ResolutionResult
 
 
-def test_materializes_every_position_transition_exactly_once(
-    transition: PortfolioTransition,
-) -> None:
-    intent = OperationalIntent(transition)
-
-    assert intent.portfolio_transition is transition
-    assert len(intent.operations) == len(transition.position_transitions) == 2
-    assert [operation.instrument for operation in intent.operations] == [
-        component.instrument for component in transition.position_transitions
-    ]
+class PublicPublication:
+    def __init__(self, publication_id: str) -> None:
+        self.publication_id = publication_id
 
 
-def test_positive_delta_is_buy_and_negative_delta_is_sell(
-    transition: PortfolioTransition,
-) -> None:
-    operations = {item.instrument.identification_value: item for item in OperationalIntent(transition).operations}
+def risk_result(instrument: InstrumentReference) -> RiskEvaluationResult:
+    resolution = object.__new__(ResolutionResult)
+    object.__setattr__(
+        resolution, "publication", PublicPublication("execution-evidence")
+    )
+    proposal = DecisionProposal.from_resolutions(
+        EconomicProposition(instrument, ExposureOrientation.POSITIVE), (resolution,)
+    )
+    return RiskEvaluationResult(proposal, RiskEvaluationOutcome.ACCEPTED, "risk-v1")
 
+
+def _target(
+    current_positions: tuple[PortfolioPosition, ...],
+    target_positions: tuple[PortfolioPosition, ...],
+    *,
+    current_balances: tuple[MonetaryBalance, ...] = (),
+    target_balances: tuple[MonetaryBalance, ...] = (),
+) -> PortfolioState:
+    instrument = (
+        target_positions[0].instrument
+        if target_positions
+        else current_positions[0].instrument
+    )
+    result = risk_result(instrument)
+    current = PortfolioState(current_positions, current_balances)
+    return PortfolioState(
+        target_positions,
+        target_balances,
+        current_portfolio_state=current,
+        considered_risk_evaluation_results=(result,),
+        contributing_risk_evaluation_results=(result,),
+        determination_basis_reference="portfolio-v1",
+    )
+
+
+def test_current_to_target_increase_and_reduction(target: PortfolioState) -> None:
+    intent = OperationalIntent(target)
+    operations = {
+        item.instrument.identification_value: item for item in intent.operations
+    }
+    assert intent.target_portfolio_state is target
     assert operations["BUY-ME"].direction is OperationDirection.BUY
     assert operations["BUY-ME"].quantity == Decimal("3")
     assert operations["SELL-ME"].direction is OperationDirection.SELL
     assert operations["SELL-ME"].quantity == Decimal("2")
 
 
-def test_monetary_transition_does_not_create_an_operation(
-    transition: PortfolioTransition,
+@pytest.mark.parametrize(
+    ("current_quantity", "target_quantity", "direction", "quantity"),
+    [
+        (None, "4", OperationDirection.BUY, "4"),
+        (None, "-4", OperationDirection.SELL, "4"),
+        ("5", "2", OperationDirection.SELL, "3"),
+        ("5", None, OperationDirection.SELL, "5"),
+        ("3", "-2", OperationDirection.SELL, "5"),
+    ],
+)
+def test_position_scenarios(
+    current_quantity, target_quantity, direction, quantity
 ) -> None:
-    intent = OperationalIntent(transition)
+    instrument = InstrumentReference("FIGI", "SCENARIO")
+    current = (
+        (PortfolioPosition(instrument, Decimal(current_quantity)),)
+        if current_quantity is not None
+        else ()
+    )
+    target = (
+        (PortfolioPosition(instrument, Decimal(target_quantity)),)
+        if target_quantity is not None
+        else ()
+    )
+    operation = OperationalIntent(_target(current, target)).operations[0]
+    assert operation.direction is direction
+    assert operation.quantity == Decimal(quantity)
 
-    operation_instruments = {item.instrument for item in intent.operations}
-    assert len(intent.operations) == len(transition.position_transitions)
-    assert all(
-        component.currency not in operation_instruments
-        for component in transition.monetary_transitions
+
+def test_multiple_instruments_are_deterministic() -> None:
+    a = InstrumentReference("FIGI", "A")
+    b = InstrumentReference("FIGI", "B")
+    target = _target(
+        (), (PortfolioPosition(b, Decimal("2")), PortfolioPosition(a, Decimal("1")))
+    )
+    first = OperationalIntent(target)
+    second = OperationalIntent(target)
+    assert first == second
+    assert hash(first) == hash(second)
+    assert first.semantic_identity == second.semantic_identity
+    assert {operation.instrument for operation in first.operations} == {a, b}
+
+
+def test_economically_equal_target_is_valid_no_op() -> None:
+    instrument = InstrumentReference("FIGI", "NO-OP")
+    position = PortfolioPosition(instrument, Decimal("2"))
+    target = _target((position,), (position,))
+    assert OperationalIntent(target).operations == ()
+    assert prepare_operational_request(target).operations == ()
+
+
+def test_request_preserves_target_risk_provenance(target: PortfolioState) -> None:
+    request = prepare_operational_request(target)
+    assert isinstance(request, OperationalRequest)
+    assert request.operational_intent.target_portfolio_state is target
+    assert request.operations == request.operational_intent.operations
+    assert (
+        request.operational_intent.target_portfolio_state.contributing_risk_evaluation_results
+        == target.contributing_risk_evaluation_results
     )
 
 
-def test_monetary_only_transition_produces_complete_empty_operation_set() -> None:
-    from quant_platform.core import CurrencyReference
-    from quant_platform.portfolio import MonetaryBalance, PortfolioState
-    from quant_platform.portfolio_transition import PortfolioMonetaryTransition
-
-    currency = CurrencyReference("USD")
-    current = PortfolioState(
-        monetary_balances=(MonetaryBalance(currency, Decimal("10")),)
+def test_max_execution_size_is_preserved_without_fragmentation() -> None:
+    instrument = InstrumentReference("FIGI", "LIMITED")
+    resolution = object.__new__(ResolutionResult)
+    object.__setattr__(resolution, "publication", PublicPublication("limited-evidence"))
+    proposal = DecisionProposal.from_resolutions(
+        EconomicProposition(instrument, ExposureOrientation.POSITIVE), (resolution,)
+    )
+    constraint = RiskConstraint(
+        RiskConstraintKind.MAX_EXECUTION_SIZE, Decimal("2"), "units"
+    )
+    result = RiskEvaluationResult(
+        proposal,
+        RiskEvaluationOutcome.CONDITIONALLY_ACCEPTED,
+        "risk-limited",
+        (constraint,),
     )
     target = PortfolioState(
-        monetary_balances=(MonetaryBalance(currency, Decimal("15")),)
+        (PortfolioPosition(instrument, Decimal("10")),),
+        current_portfolio_state=PortfolioState(),
+        considered_risk_evaluation_results=(result,),
+        contributing_risk_evaluation_results=(result,),
+        determination_basis_reference="portfolio-v1",
     )
-    transition = PortfolioTransition(
-        current,
-        target,
-        monetary_transitions=(PortfolioMonetaryTransition(currency, Decimal("5")),),
+    request = prepare_operational_request(target)
+    assert request.operations == (
+        InvestmentOperation(instrument, OperationDirection.BUY, Decimal("10")),
     )
+    traced = request.operational_intent.target_portfolio_state.contributing_risk_evaluation_results[
+        0
+    ]
+    assert traced.constraints == (constraint,)
 
-    assert OperationalIntent(transition).operations == ()
+
+def test_autonomous_monetary_change_is_rejected() -> None:
+    instrument = InstrumentReference("FIGI", "CASH-CONTEXT")
+    currency = CurrencyReference("USD")
+    position = PortfolioPosition(instrument, Decimal("1"))
+    target = _target(
+        (position,),
+        (position,),
+        current_balances=(MonetaryBalance(currency, Decimal("10")),),
+        target_balances=(MonetaryBalance(currency, Decimal("20")),),
+    )
+    with pytest.raises(ExecutionDomainError, match="autonomous monetary"):
+        prepare_operational_request(target)
 
 
-@pytest.mark.parametrize("invalid", [None, object(), "transition"])
-def test_rejects_a_missing_or_invalid_origin(invalid: object) -> None:
+@pytest.mark.parametrize("invalid", [None, object(), "target", PortfolioState()])
+def test_rejects_invalid_or_unprovenanced_target(invalid: object) -> None:
     with pytest.raises(ExecutionDomainError):
         OperationalIntent(invalid)  # type: ignore[arg-type]
 
 
-def test_contract_and_components_are_immutable(
-    transition: PortfolioTransition,
+def test_target_current_intent_and_request_are_immutable(
+    target: PortfolioState,
 ) -> None:
-    intent = OperationalIntent(transition)
-
+    current = target.current_portfolio_state
+    request = prepare_operational_request(target)
     with pytest.raises((FrozenInstanceError, AttributeError)):
-        intent.operations = ()  # type: ignore[misc]
-    with pytest.raises((FrozenInstanceError, AttributeError)):
-        intent.operations[0].quantity = Decimal("99")  # type: ignore[misc]
-
-
-def test_identity_is_stable_and_independent_from_instance_identity(
-    transition: PortfolioTransition,
-) -> None:
-    first = OperationalIntent(transition)
-    second = OperationalIntent(transition)
-
-    assert first is not second
-    assert first == second
-    assert hash(first) == hash(second)
-    assert first.semantic_identity == second.semantic_identity
-    assert first.semantic_identity != transition.semantic_identity
+        request.operational_intent.target_portfolio_state = PortfolioState()  # type: ignore[misc]
+    assert request.operational_intent.target_portfolio_state is target
+    assert target.current_portfolio_state is current
 
 
 def test_public_fields_are_exact() -> None:
     assert [field.name for field in fields(OperationalIntent)] == [
-        "portfolio_transition",
+        "target_portfolio_state",
         "operations",
         "semantic_identity",
     ]
@@ -120,9 +225,7 @@ def test_public_fields_are_exact() -> None:
     ],
 )
 def test_investment_operation_rejects_invalid_public_values(
-    instrument: object,
-    direction: object,
-    quantity: object,
+    instrument, direction, quantity
 ) -> None:
     with pytest.raises(ExecutionDomainError):
         InvestmentOperation(instrument, direction, quantity)  # type: ignore[arg-type]

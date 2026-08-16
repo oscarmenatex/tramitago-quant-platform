@@ -21,6 +21,7 @@ from quant_platform.portfolio_transition import (
     PortfolioPositionTransition,
     PortfolioTransition,
 )
+from tests.execution_planning_support import target_from_transition
 
 
 def _submission() -> OperationalSubmission:
@@ -40,7 +41,9 @@ def _submission() -> OperationalSubmission:
         (PortfolioPositionTransition(instrument, Decimal("2")),),
         (PortfolioMonetaryTransition(currency, Decimal("-20")),),
     )
-    return OperationalSubmission(OperationalRequest(OperationalIntent(transition)))
+    return OperationalSubmission(
+        OperationalRequest(OperationalIntent(target_from_transition(transition)))
+    )
 
 
 class StaticBoundary:
