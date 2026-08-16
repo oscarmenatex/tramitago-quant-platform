@@ -5,6 +5,7 @@ from .domain import (
     InvestmentOperation,
     OperationalIntent,
     OperationDirection,
+    prepare_operational_request,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "InvestmentOperation",
     "OperationalIntent",
     "OperationDirection",
+    "prepare_operational_request",
 ]

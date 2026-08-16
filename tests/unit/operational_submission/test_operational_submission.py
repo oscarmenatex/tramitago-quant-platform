@@ -18,6 +18,7 @@ from quant_platform.portfolio_transition import (
     PortfolioPositionTransition,
     PortfolioTransition,
 )
+from tests.execution_planning_support import target_from_transition
 
 
 def _request() -> OperationalRequest:
@@ -37,7 +38,7 @@ def _request() -> OperationalRequest:
         (PortfolioPositionTransition(instrument, Decimal("2")),),
         (PortfolioMonetaryTransition(currency, Decimal("-20")),),
     )
-    return OperationalRequest(OperationalIntent(transition))
+    return OperationalRequest(OperationalIntent(target_from_transition(transition)))
 
 
 class RecordingBoundary:

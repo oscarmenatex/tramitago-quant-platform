@@ -14,9 +14,10 @@ def test_public_api_is_limited_to_authorized_contracts() -> None:
 
 def test_public_contract_reuses_execution_contracts() -> None:
     assert OperationalRequest.__annotations__["operational_intent"] is OperationalIntent
-    assert OperationalRequest.__annotations__["operations"] == tuple[
-        InvestmentOperation, ...
-    ]
+    assert (
+        OperationalRequest.__annotations__["operations"]
+        == tuple[InvestmentOperation, ...]
+    )
 
 
 def test_dependency_direction_and_infrastructure_independence() -> None:
@@ -51,4 +52,4 @@ def test_dependency_direction_and_infrastructure_independence() -> None:
         path.read_text(encoding="utf-8")
         for path in Path("src/quant_platform/execution").rglob("*.py")
     )
-    assert "quant_platform.operational_request" not in execution_source
+    assert "quant_platform.operational_submission" not in execution_source

@@ -18,6 +18,7 @@ from quant_platform.portfolio_transition import (
     PortfolioPositionTransition,
     PortfolioTransition,
 )
+from execution_demo_support import target_from_transition
 
 
 class ControlledMaterializationBoundary:
@@ -54,7 +55,7 @@ def main() -> None:
         (PortfolioPositionTransition(instrument, Decimal("2")),),
         (PortfolioMonetaryTransition(currency, Decimal("-20")),),
     )
-    intent = OperationalIntent(transition)
+    intent = OperationalIntent(target_from_transition(transition))
     submission = OperationalSubmission(OperationalRequest(intent))
     admission = OperationalAdmission(submission, AdmissionDecision.ADMITTED)
 

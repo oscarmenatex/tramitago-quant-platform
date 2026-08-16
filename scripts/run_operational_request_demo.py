@@ -12,6 +12,7 @@ from quant_platform.portfolio_transition import (
     PortfolioPositionTransition,
     PortfolioTransition,
 )
+from execution_demo_support import target_from_transition
 
 
 def main() -> None:
@@ -41,7 +42,7 @@ def main() -> None:
         ),
         (PortfolioMonetaryTransition(usd, Decimal("-20")),),
     )
-    intent = OperationalIntent(transition)
+    intent = OperationalIntent(target_from_transition(transition))
     request = OperationalRequest(intent)
 
     assert request.operational_intent is intent
