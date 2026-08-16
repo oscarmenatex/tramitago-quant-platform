@@ -50,7 +50,11 @@ def test_foreign_materialization_is_a_domain_error(
         Decimal("100"),
     )
     foreign = OperationalMaterialization(
-        foreign_operation, Decimal("1"), Decimal("10"), CurrencyReference("USD")
+        "foreign-1",
+        foreign_operation,
+        Decimal("1"),
+        Decimal("10"),
+        CurrencyReference("USD"),
     )
 
     with pytest.raises(OperationalMaterializationInterpretationDomainError):
@@ -66,7 +70,11 @@ def test_mixed_operations_are_a_domain_error(
         Decimal("1"),
     )
     foreign = OperationalMaterialization(
-        foreign_operation, Decimal("1"), Decimal("10"), CurrencyReference("USD")
+        "foreign-2",
+        foreign_operation,
+        Decimal("1"),
+        Decimal("10"),
+        CurrencyReference("USD"),
     )
 
     with pytest.raises(OperationalMaterializationInterpretationDomainError):
@@ -92,7 +100,9 @@ def test_public_asset_rejects_invalid_operation(
 ) -> None:
     with pytest.raises(OperationalMaterializationInterpretationDomainError):
         OperationalMaterializationInterpretation(
-            operation_value, quantity, sources  # type: ignore[arg-type]
+            operation_value,
+            quantity,
+            sources,  # type: ignore[arg-type]
         )
 
 
@@ -105,7 +115,9 @@ def test_public_asset_rejects_empty_or_mutable_provenance(
         OperationalMaterializationInterpretation(operation, Decimal("0"), ())
     with pytest.raises(OperationalMaterializationInterpretationDomainError):
         OperationalMaterializationInterpretation(
-            operation, Decimal("1"), [source]  # type: ignore[arg-type]
+            operation,
+            Decimal("1"),
+            [source],  # type: ignore[arg-type]
         )
 
 
@@ -118,7 +130,11 @@ def test_public_asset_rejects_foreign_or_non_materialization_sources(
         Decimal("1"),
     )
     foreign = OperationalMaterialization(
-        foreign_operation, Decimal("1"), Decimal("10"), CurrencyReference("USD")
+        "foreign-direct",
+        foreign_operation,
+        Decimal("1"),
+        Decimal("10"),
+        CurrencyReference("USD"),
     )
 
     with pytest.raises(OperationalMaterializationInterpretationDomainError):
@@ -132,9 +148,7 @@ def test_public_asset_requires_exact_derived_decimal_quantity(
 ) -> None:
     sources = (materialization_factory("0.1"), materialization_factory("0.2"))
 
-    valid = OperationalMaterializationInterpretation(
-        operation, Decimal("0.3"), sources
-    )
+    valid = OperationalMaterializationInterpretation(operation, Decimal("0.3"), sources)
 
     assert valid.materialized_quantity == Decimal("0.3")
     assert valid.source_materializations == sources
@@ -158,8 +172,17 @@ def test_sources_are_not_mutated_and_successive_results_remain_immutable(
     assert earlier.materialized_quantity == Decimal("30")
     assert earlier.source_materializations == (first,)
     assert later.materialized_quantity == Decimal("50")
-    assert operation_values == (operation.instrument, operation.direction, operation.quantity)
-    assert first_values == (first.operation, first.quantity, first.price, first.currency)
+    assert operation_values == (
+        operation.instrument,
+        operation.direction,
+        operation.quantity,
+    )
+    assert first_values == (
+        first.operation,
+        first.quantity,
+        first.price,
+        first.currency,
+    )
     with pytest.raises((FrozenInstanceError, AttributeError)):
         earlier.materialized_quantity = Decimal("50")  # type: ignore[misc]
 

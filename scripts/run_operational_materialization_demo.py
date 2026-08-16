@@ -4,31 +4,42 @@
 from decimal import Decimal
 
 from quant_platform.core import CurrencyReference, InstrumentReference
-from quant_platform.execution import OperationalIntent
+from quant_platform.decision_model import (
+    DecisionProposal,
+    EconomicProposition,
+    ExposureOrientation,
+)
+from quant_platform.execution import prepare_operational_request
 from quant_platform.operational_admission import AdmissionDecision, OperationalAdmission
 from quant_platform.operational_materialization import (
     OperationalMaterializationObservation,
     recognize_materialization,
 )
-from quant_platform.operational_request import OperationalRequest
 from quant_platform.operational_submission import OperationalSubmission
-from quant_platform.portfolio import MonetaryBalance, PortfolioPosition, PortfolioState
-from quant_platform.portfolio_transition import (
-    PortfolioMonetaryTransition,
-    PortfolioPositionTransition,
-    PortfolioTransition,
+from quant_platform.portfolio import PortfolioPosition, PortfolioState
+from quant_platform.risk import (
+    RiskEvaluationOutcome,
+    RiskEvaluationResult,
 )
-from execution_demo_support import target_from_transition
+from quant_platform.strategy_evaluation.resolution import ResolutionResult
+
+
+class PublicPublication:
+    publication_id = "materialization-demo-evidence"
 
 
 class ControlledMaterializationBoundary:
     """Demo-only normalized evidence source with no productive infrastructure."""
+
+    def __init__(self, occurrence_id: str) -> None:
+        self.occurrence_id = occurrence_id
 
     def observe(
         self, admission: OperationalAdmission
     ) -> OperationalMaterializationObservation:
         operation = admission.submission.operational_request.operations[0]
         observation = OperationalMaterializationObservation(
+            occurrence_id=self.occurrence_id,
             operation=operation,
             quantity=Decimal("0.75"),
             price=Decimal("25.40"),
@@ -38,38 +49,47 @@ class ControlledMaterializationBoundary:
         return observation
 
 
-def main() -> None:
+def _submission() -> OperationalSubmission:
     instrument = InstrumentReference("FIGI", "MATERIALIZATION-DEMO")
-    currency = CurrencyReference("USD")
-    current = PortfolioState(
-        (PortfolioPosition(instrument, Decimal("1")),),
-        (MonetaryBalance(currency, Decimal("100")),),
+    resolution = object.__new__(ResolutionResult)
+    object.__setattr__(resolution, "publication", PublicPublication())
+    proposal = DecisionProposal.from_resolutions(
+        EconomicProposition(instrument, ExposureOrientation.POSITIVE),
+        (resolution,),
+    )
+    risk_result = RiskEvaluationResult(
+        proposal,
+        RiskEvaluationOutcome.ACCEPTED,
+        "materialization-demo-risk",
     )
     target = PortfolioState(
-        (PortfolioPosition(instrument, Decimal("3")),),
-        (MonetaryBalance(currency, Decimal("80")),),
+        (PortfolioPosition(instrument, Decimal("2")),),
+        current_portfolio_state=PortfolioState(),
+        considered_risk_evaluation_results=(risk_result,),
+        contributing_risk_evaluation_results=(risk_result,),
+        determination_basis_reference="materialization-demo-portfolio",
     )
-    transition = PortfolioTransition(
-        current,
-        target,
-        (PortfolioPositionTransition(instrument, Decimal("2")),),
-        (PortfolioMonetaryTransition(currency, Decimal("-20")),),
-    )
-    intent = OperationalIntent(target_from_transition(transition))
-    submission = OperationalSubmission(OperationalRequest(intent))
-    admission = OperationalAdmission(submission, AdmissionDecision.ADMITTED)
+    return OperationalSubmission(prepare_operational_request(target))
 
-    print("InvestmentOperation:", intent.operations[0])
-    print("OperationalAdmission:", admission.decision.value)
-    materialization = recognize_materialization(
-        admission, ControlledMaterializationBoundary()
-    )
-    assert materialization is not None
-    print("recognized Materialization:", materialization)
-    print("operation:", materialization.operation)
-    print("quantity:", materialization.quantity)
-    print("price:", materialization.price)
-    print("currency:", materialization.currency.currency_code)
+
+def main() -> None:
+    submission = _submission()
+    print("InvestmentOperation:", submission.operational_request.operations[0])
+    for decision, occurrence_id in (
+        (AdmissionDecision.ADMITTED, "materialization-demo-admitted"),
+        (AdmissionDecision.REJECTED, "materialization-demo-rejected"),
+    ):
+        admission = OperationalAdmission(submission, decision)
+        materialization = recognize_materialization(
+            admission,
+            ControlledMaterializationBoundary(occurrence_id),
+        )
+        assert materialization is not None
+        print("OperationalAdmission:", admission.decision.value)
+        print("occurrence identity:", materialization.occurrence_id)
+        print("recognized Materialization:", materialization)
+        print("admission decision preserved:", admission.decision.value)
+
     print("Observation and Materialization are distinct contracts: yes")
     print("productive infrastructure used: no")
     print("Operational Materialization demo passed.")

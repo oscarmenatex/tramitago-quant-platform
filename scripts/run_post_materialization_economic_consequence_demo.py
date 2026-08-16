@@ -20,6 +20,7 @@ def main() -> None:
         (MonetaryBalance(usd, Decimal("1000")),),
     )
     source = OperationalMaterialization(
+        "economic-consequence-demo-1",
         InvestmentOperation(instrument, OperationDirection.BUY, Decimal("100")),
         Decimal("3"),
         Decimal("25"),
@@ -35,7 +36,9 @@ def main() -> None:
     print("No settlement or P&L is asserted.")
 
     assert consequence.resulting_portfolio_state.positions[0].quantity == Decimal("13")
-    assert consequence.resulting_portfolio_state.monetary_balances[0].amount == Decimal("925")
+    assert consequence.resulting_portfolio_state.monetary_balances[0].amount == Decimal(
+        "925"
+    )
     print("Post-Materialization Economic Consequence demo passed.")
 
 

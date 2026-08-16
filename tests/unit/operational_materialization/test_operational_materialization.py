@@ -25,8 +25,12 @@ class StaticBoundary:
         return self.observation
 
 
-def _observation(admission: OperationalAdmission) -> OperationalMaterializationObservation:
+def _observation(
+    admission: OperationalAdmission,
+    occurrence_id: str = "occurrence-1",
+) -> OperationalMaterializationObservation:
     return OperationalMaterializationObservation(
+        occurrence_id=occurrence_id,
         operation=admission.submission.operational_request.operations[0],
         quantity=Decimal("0.5"),
         price=Decimal("12.34"),
@@ -44,6 +48,7 @@ def test_recognizes_valid_observation_and_preserves_all_values(
 
     assert isinstance(materialization, OperationalMaterialization)
     assert boundary.admissions == [admission]
+    assert materialization.occurrence_id is observation.occurrence_id
     assert materialization.operation is observation.operation
     assert materialization.quantity is observation.quantity
     assert materialization.price is observation.price
@@ -56,6 +61,7 @@ def test_finite_price_is_not_rejected_only_for_not_being_positive(
 ) -> None:
     operation = admission.submission.operational_request.operations[0]
     observation = OperationalMaterializationObservation(
+        occurrence_id="finite-price",
         operation=operation,
         quantity=Decimal("0.5"),
         price=price,
@@ -73,16 +79,32 @@ def test_normal_absence_returns_none(admission: OperationalAdmission) -> None:
     assert recognize_materialization(admission, StaticBoundary(None)) is None  # type: ignore[arg-type]
 
 
-def test_rejected_admission_is_rejected_before_observation(
+def test_rejected_admission_preserves_external_materialization_truth(
     admission: OperationalAdmission,
 ) -> None:
     rejected = OperationalAdmission(admission.submission, AdmissionDecision.REJECTED)
-    boundary = StaticBoundary(_observation(admission))
+    observation = _observation(rejected, "rejected-occurrence")
+    boundary = StaticBoundary(observation)
 
-    with pytest.raises(OperationalMaterializationDomainError):
-        recognize_materialization(rejected, boundary)  # type: ignore[arg-type]
+    materialization = recognize_materialization(rejected, boundary)  # type: ignore[arg-type]
 
-    assert boundary.admissions == []
+    assert materialization is not None
+    assert materialization.occurrence_id is observation.occurrence_id
+    assert materialization.operation is observation.operation
+    assert materialization.quantity is observation.quantity
+    assert materialization.price is observation.price
+    assert materialization.currency is observation.currency
+    assert rejected.decision is AdmissionDecision.REJECTED
+    assert boundary.admissions == [rejected]
+
+
+def test_rejected_admission_with_normal_absence_returns_none(
+    admission: OperationalAdmission,
+) -> None:
+    rejected = OperationalAdmission(admission.submission, AdmissionDecision.REJECTED)
+
+    assert recognize_materialization(rejected, StaticBoundary(None)) is None  # type: ignore[arg-type]
+    assert rejected.decision is AdmissionDecision.REJECTED
 
 
 def test_operation_outside_admitted_flow_is_rejected(
@@ -94,7 +116,11 @@ def test_operation_outside_admitted_flow_is_rejected(
         Decimal("1"),
     )
     observation = OperationalMaterializationObservation(
-        foreign, Decimal("1"), Decimal("10"), CurrencyReference("USD")
+        "foreign-occurrence",
+        foreign,
+        Decimal("1"),
+        Decimal("10"),
+        CurrencyReference("USD"),
     )
 
     with pytest.raises(OperationalMaterializationDomainError):
@@ -113,7 +139,11 @@ def test_equal_copy_of_admitted_operation_is_not_part_of_the_flow(
     assert copied == original
     assert copied is not original
     observation = OperationalMaterializationObservation(
-        copied, Decimal("1"), Decimal("10"), CurrencyReference("USD")
+        "copied-operation",
+        copied,
+        Decimal("1"),
+        Decimal("10"),
+        CurrencyReference("USD"),
     )
 
     with pytest.raises(OperationalMaterializationDomainError):
@@ -136,6 +166,7 @@ def test_incompatible_evidence_is_rejected(
     admission: OperationalAdmission, attribute: str, invalid: object
 ) -> None:
     values = {
+        "occurrence_id": "valid-occurrence",
         "operation": admission.submission.operational_request.operations[0],
         "quantity": Decimal("1"),
         "price": Decimal("10"),
@@ -191,8 +222,11 @@ def test_distinct_boundaries_are_substitutable(
 def test_multiple_occurrences_are_independent_and_immutable(
     admission: OperationalAdmission,
 ) -> None:
-    first = recognize_materialization(admission, StaticBoundary(_observation(admission)))  # type: ignore[arg-type]
+    first = recognize_materialization(
+        admission, StaticBoundary(_observation(admission))
+    )  # type: ignore[arg-type]
     second_observation = OperationalMaterializationObservation(
+        "occurrence-2",
         admission.submission.operational_request.operations[0],
         Decimal("0.25"),
         Decimal("12.50"),
@@ -201,6 +235,8 @@ def test_multiple_occurrences_are_independent_and_immutable(
     second = recognize_materialization(admission, StaticBoundary(second_observation))  # type: ignore[arg-type]
 
     assert first is not None and second is not None
+    assert first.occurrence_id == "occurrence-1"
+    assert second.occurrence_id == "occurrence-2"
     assert first.operation is second.operation
     assert first.quantity == Decimal("0.5")
     assert second.quantity == Decimal("0.25")
@@ -213,9 +249,50 @@ def test_multiple_occurrences_are_independent_and_immutable(
 
 
 def test_public_assets_are_contractually_minimal() -> None:
-    expected = ["operation", "quantity", "price", "currency"]
+    expected = ["occurrence_id", "operation", "quantity", "price", "currency"]
     assert [item.name for item in fields(OperationalMaterialization)] == expected
-    assert [item.name for item in fields(OperationalMaterializationObservation)] == expected
+    assert [
+        item.name for item in fields(OperationalMaterializationObservation)
+    ] == expected
+
+
+def test_occurrence_identity_distinguishes_economically_equal_facts(
+    admission: OperationalAdmission,
+) -> None:
+    first = recognize_materialization(
+        admission,
+        StaticBoundary(_observation(admission, "occurrence-a")),
+    )
+    second = recognize_materialization(
+        admission,
+        StaticBoundary(_observation(admission, "occurrence-b")),
+    )
+    same_occurrence = recognize_materialization(
+        admission,
+        StaticBoundary(_observation(admission, "occurrence-a")),
+    )
+
+    assert first is not None and second is not None and same_occurrence is not None
+    assert first != second
+    assert first == same_occurrence
+    assert first.occurrence_id != second.occurrence_id
+
+
+@pytest.mark.parametrize("invalid", [None, "", "   ", 1, object()])
+def test_occurrence_identity_must_be_a_non_empty_string(
+    admission: OperationalAdmission,
+    invalid: object,
+) -> None:
+    observation = OperationalMaterializationObservation(
+        invalid,  # type: ignore[arg-type]
+        admission.submission.operational_request.operations[0],
+        Decimal("1"),
+        Decimal("10"),
+        CurrencyReference("USD"),
+    )
+
+    with pytest.raises(OperationalMaterializationDomainError):
+        recognize_materialization(admission, StaticBoundary(observation))  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("invalid", [None, object(), "admission"])
