@@ -41,6 +41,30 @@ def test_multiple_materializations_produce_joint_decimal_quantity(
     assert result.source_materializations == tuple(sources)
 
 
+def test_repeated_occurrence_identity_is_rejected_without_deduplication(
+    operation: InvestmentOperation,
+    materialization_factory,
+) -> None:
+    first = materialization_factory("30", occurrence_id="same-occurrence")
+    repeated = materialization_factory("30", occurrence_id="same-occurrence")
+
+    with pytest.raises(OperationalMaterializationInterpretationDomainError):
+        interpret_materializations(operation, [first, repeated])
+
+
+def test_equal_economics_with_distinct_occurrences_both_contribute(
+    operation: InvestmentOperation,
+    materialization_factory,
+) -> None:
+    first = materialization_factory("30", occurrence_id="occurrence-a")
+    second = materialization_factory("30", occurrence_id="occurrence-b")
+
+    result = interpret_materializations(operation, [first, second])
+
+    assert result.materialized_quantity == Decimal("60")
+    assert result.source_materializations == (first, second)
+
+
 def test_foreign_materialization_is_a_domain_error(
     operation: InvestmentOperation,
 ) -> None:
@@ -156,6 +180,19 @@ def test_public_asset_requires_exact_derived_decimal_quantity(
         OperationalMaterializationInterpretation(operation, 0.3, sources)  # type: ignore[arg-type]
     with pytest.raises(OperationalMaterializationInterpretationDomainError):
         OperationalMaterializationInterpretation(operation, Decimal("0.4"), sources)
+
+
+def test_public_asset_rejects_repeated_occurrence_identity(
+    operation: InvestmentOperation,
+    materialization_factory,
+) -> None:
+    sources = (
+        materialization_factory("1", occurrence_id="same-occurrence"),
+        materialization_factory("1", occurrence_id="same-occurrence"),
+    )
+
+    with pytest.raises(OperationalMaterializationInterpretationDomainError):
+        OperationalMaterializationInterpretation(operation, Decimal("2"), sources)
 
 
 def test_sources_are_not_mutated_and_successive_results_remain_immutable(

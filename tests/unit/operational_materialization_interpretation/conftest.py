@@ -21,9 +21,13 @@ def operation() -> InvestmentOperation:
 def materialization_factory(operation: InvestmentOperation):
     occurrence_sequence = count(1)
 
-    def create(quantity: str) -> OperationalMaterialization:
+    def create(
+        quantity: str,
+        *,
+        occurrence_id: str | None = None,
+    ) -> OperationalMaterialization:
         return OperationalMaterialization(
-            f"interpretation-{next(occurrence_sequence)}",
+            occurrence_id or f"interpretation-{next(occurrence_sequence)}",
             operation,
             Decimal(quantity),
             Decimal("12.34"),

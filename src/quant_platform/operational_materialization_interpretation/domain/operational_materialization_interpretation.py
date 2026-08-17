@@ -10,6 +10,15 @@ from quant_platform.operational_materialization import OperationalMaterializatio
 from .exceptions import OperationalMaterializationInterpretationDomainError
 
 
+def _validate_unique_occurrences(
+    sources: tuple[OperationalMaterialization, ...],
+) -> None:
+    if len({source.occurrence_id for source in sources}) != len(sources):
+        raise OperationalMaterializationInterpretationDomainError(
+            "Every source must represent a distinct material occurrence."
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class OperationalMaterializationInterpretation:
     """Immutable materialized magnitude derived from explicit source facts."""
@@ -45,6 +54,7 @@ class OperationalMaterializationInterpretation:
             raise OperationalMaterializationInterpretationDomainError(
                 "Every materialization must correspond to the interpreted operation."
             )
+        _validate_unique_occurrences(self.source_materializations)
         if not isinstance(self.materialized_quantity, Decimal):
             raise OperationalMaterializationInterpretationDomainError(
                 "Materialized quantity must be an exact Decimal."
@@ -89,6 +99,7 @@ def interpret_materializations(
         raise OperationalMaterializationInterpretationDomainError(
             "Every materialization must correspond to the interpreted operation."
         )
+    _validate_unique_occurrences(sources)
 
     materialized_quantity = sum(
         (source.quantity for source in sources), start=Decimal("0")

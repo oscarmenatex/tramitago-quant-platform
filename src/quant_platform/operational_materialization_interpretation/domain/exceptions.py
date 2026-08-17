@@ -1,4 +1,4 @@
-"""Public error for Operational Materialization Interpretation."""
+"""Public error raised during materialization interpretation in Execution."""
 
 
 class OperationalMaterializationInterpretationDomainError(RuntimeError):
