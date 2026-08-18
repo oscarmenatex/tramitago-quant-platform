@@ -1,4 +1,4 @@
-"""Economic Reality Verification domain API."""
+"""Domain API for Economic Reality Verification within CAP-007 Reconciliation."""
 
 from .exceptions import EconomicRealityVerificationDomainError
 from .verification import (
