@@ -1,4 +1,4 @@
-"""Public API for Operational Materialization Interpretation."""
+"""Public API for materialization interpretation within Execution."""
 
 from .domain import (
     OperationalMaterializationInterpretation,
