@@ -15,7 +15,7 @@ def _invalid(message: str) -> InternalEconomicRealityQualificationDomainError:
 
 @dataclass(frozen=True, slots=True)
 class InternalEconomicRealityReferenceTime:
-    """Capability-local, unambiguous economic instant normalized to UTC."""
+    """Qualification-local, unambiguous economic instant normalized to UTC."""
 
     value: datetime
 
@@ -29,7 +29,7 @@ class InternalEconomicRealityReferenceTime:
 
 @dataclass(frozen=True, slots=True)
 class InternalEconomicRealityProvenance:
-    """Capability-local identity of an internal source attesting a reality."""
+    """Qualification-local identity of an internal source attesting a reality."""
 
     value: str
 

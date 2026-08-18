@@ -1,4 +1,4 @@
-"""Public incompatibility for Internal Economic Reality Qualification."""
+"""CAP-007 Reconciliation incompatibility for internal reality qualification."""
 
 
 class InternalEconomicRealityQualificationDomainError(ValueError):
