@@ -1,4 +1,4 @@
-"""Economic Reality Verification capability public API."""
+"""CAP-007 Reconciliation: Economic Reality Verification public API."""
 
 from .domain import (
     EconomicRealityDimension,

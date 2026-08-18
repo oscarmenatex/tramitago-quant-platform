@@ -1,4 +1,4 @@
-"""Public incompatibility raised by Economic Reality Verification."""
+"""Public incompatibility for CAP-007 Reconciliation reality verification."""
 
 
 class EconomicRealityVerificationDomainError(ValueError):
