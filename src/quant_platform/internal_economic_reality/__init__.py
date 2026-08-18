@@ -1,4 +1,4 @@
-"""Internal Economic Reality Qualification capability public API."""
+"""CAP-007 Reconciliation public API for Internal Economic Reality Qualification."""
 
 from .domain import (
     InternalEconomicReality,

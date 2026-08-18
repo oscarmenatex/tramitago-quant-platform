@@ -1,4 +1,4 @@
-"""Public domain contracts for Internal Economic Reality Qualification."""
+"""CAP-007 Reconciliation contracts for Internal Economic Reality Qualification."""
 
 from .exceptions import InternalEconomicRealityQualificationDomainError
 from .qualification import (
