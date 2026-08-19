@@ -2,16 +2,28 @@ from pathlib import Path
 
 import quant_platform.execution as execution
 from quant_platform.core import InstrumentReference
-from quant_platform.execution import InvestmentOperation, OperationalIntent
+from quant_platform.execution import (
+    ExecutionCompletionState,
+    ExecutionCompletionStatus,
+    InvestmentOperation,
+    OperationalIntent,
+    classify_execution_completion,
+)
+from quant_platform.operational_materialization_interpretation import (
+    OperationalMaterializationInterpretation,
+)
 from quant_platform.portfolio import PortfolioState
 
 
 def test_public_api_is_limited_to_the_authorized_contract() -> None:
     assert execution.__all__ == [
+        "ExecutionCompletionState",
+        "ExecutionCompletionStatus",
         "ExecutionDomainError",
         "InvestmentOperation",
         "OperationalIntent",
         "OperationDirection",
+        "classify_execution_completion",
         "prepare_operational_request",
     ]
 
@@ -19,6 +31,41 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
 def test_public_contract_reuses_only_authorized_domain_contracts() -> None:
     assert OperationalIntent.__annotations__["target_portfolio_state"] is PortfolioState
     assert InvestmentOperation.__annotations__["instrument"] is InstrumentReference
+    assert (
+        ExecutionCompletionState.__annotations__["interpretation"]
+        is OperationalMaterializationInterpretation
+    )
+
+
+def test_completion_contract_has_only_partial_and_complete() -> None:
+    assert list(ExecutionCompletionStatus) == [
+        ExecutionCompletionStatus.PARTIAL,
+        ExecutionCompletionStatus.COMPLETE,
+    ]
+    assert tuple(classify_execution_completion.__annotations__) == (
+        "interpretation",
+        "return",
+    )
+
+
+def test_completion_has_no_later_responsibilities_or_infrastructure() -> None:
+    source = Path("src/quant_platform/execution/completion.py").read_text(
+        encoding="utf-8"
+    )
+    forbidden = (
+        "remaining_quantity",
+        "completion_ratio",
+        "current_completion",
+        "latest_completion",
+        "Reconciliation",
+        "PortfolioState",
+        "Event",
+        "broker",
+        "database",
+        "repository",
+        "message queue",
+    )
+    assert not any(term in source for term in forbidden)
 
 
 def test_capability_contains_no_infrastructure_or_materialization_layers() -> None:
