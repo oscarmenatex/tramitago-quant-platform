@@ -20,11 +20,17 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "ExecutionCompletionState",
         "ExecutionCompletionStatus",
         "ExecutionDomainError",
+        "ExecutionRealityReferenceTime",
+        "ExternalExecutionAuthority",
+        "ExternalExecutionReality",
         "InvestmentOperation",
         "OperationalIntent",
         "OperationDirection",
+        "ReportedExecution",
+        "SupportingExecutionEvidence",
         "classify_execution_completion",
         "prepare_operational_request",
+        "qualify_external_execution_reality",
     ]
 
 
