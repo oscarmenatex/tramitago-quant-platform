@@ -21,6 +21,8 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "ExecutionCompletionStatus",
         "ExecutionDomainError",
         "ExecutionRealityReferenceTime",
+        "ExecutionRealityVerification",
+        "ExecutionRealityVerificationOutcome",
         "ExternalExecutionAuthority",
         "ExternalExecutionReality",
         "InternalExecutionAuthority",
@@ -35,6 +37,7 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "prepare_operational_request",
         "qualify_external_execution_reality",
         "qualify_internal_execution_reality",
+        "verify_execution_reality",
     ]
 
 

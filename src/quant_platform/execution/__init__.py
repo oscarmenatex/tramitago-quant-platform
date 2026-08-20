@@ -26,12 +26,19 @@ from .internal_reality import (
     SupportingInternalExecutionEvidence,
     qualify_internal_execution_reality,
 )
+from .reality_verification import (
+    ExecutionRealityVerification,
+    ExecutionRealityVerificationOutcome,
+    verify_execution_reality,
+)
 
 __all__ = [
     "ExecutionCompletionState",
     "ExecutionCompletionStatus",
     "ExecutionDomainError",
     "ExecutionRealityReferenceTime",
+    "ExecutionRealityVerification",
+    "ExecutionRealityVerificationOutcome",
     "ExternalExecutionAuthority",
     "ExternalExecutionReality",
     "InternalExecutionAuthority",
@@ -46,4 +53,5 @@ __all__ = [
     "prepare_operational_request",
     "qualify_external_execution_reality",
     "qualify_internal_execution_reality",
+    "verify_execution_reality",
 ]
