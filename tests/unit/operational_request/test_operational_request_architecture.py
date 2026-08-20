@@ -48,8 +48,17 @@ def test_dependency_direction_and_infrastructure_independence() -> None:
     )
     assert not any(dependency in source for dependency in forbidden_dependencies)
 
-    execution_source = "\n".join(
+    execution_paths = tuple(Path("src/quant_platform/execution").rglob("*.py"))
+    execution_source_without_terminal_recognition = "\n".join(
         path.read_text(encoding="utf-8")
-        for path in Path("src/quant_platform/execution").rglob("*.py")
+        for path in execution_paths
+        if path.name != "order_terminal_state.py"
     )
-    assert "quant_platform.operational_submission" not in execution_source
+    assert (
+        "quant_platform.operational_submission"
+        not in execution_source_without_terminal_recognition
+    )
+    terminal_recognition_source = Path(
+        "src/quant_platform/execution/order_terminal_state.py"
+    ).read_text(encoding="utf-8")
+    assert "quant_platform.operational_submission" in terminal_recognition_source

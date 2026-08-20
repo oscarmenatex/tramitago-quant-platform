@@ -26,6 +26,14 @@ from .internal_reality import (
     SupportingInternalExecutionEvidence,
     qualify_internal_execution_reality,
 )
+from .order_terminal_state import (
+    ExternalOrderAuthority,
+    ExternalOrderTerminalState,
+    OrderTerminalReferenceTime,
+    OrderTerminalState,
+    SupportingOrderTerminalEvidence,
+    recognize_order_terminal_state,
+)
 from .reality_verification import (
     ExecutionRealityVerification,
     ExecutionRealityVerificationOutcome,
@@ -41,17 +49,23 @@ __all__ = [
     "ExecutionRealityVerificationOutcome",
     "ExternalExecutionAuthority",
     "ExternalExecutionReality",
+    "ExternalOrderAuthority",
+    "ExternalOrderTerminalState",
     "InternalExecutionAuthority",
     "InternalExecutionReality",
     "InvestmentOperation",
     "OperationalIntent",
     "OperationDirection",
+    "OrderTerminalReferenceTime",
+    "OrderTerminalState",
     "ReportedExecution",
     "SupportingExecutionEvidence",
     "SupportingInternalExecutionEvidence",
+    "SupportingOrderTerminalEvidence",
     "classify_execution_completion",
     "prepare_operational_request",
     "qualify_external_execution_reality",
     "qualify_internal_execution_reality",
+    "recognize_order_terminal_state",
     "verify_execution_reality",
 ]
