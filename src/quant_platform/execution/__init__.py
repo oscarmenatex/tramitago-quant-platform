@@ -58,6 +58,11 @@ from .reality_verification import (
     ExecutionRealityVerificationOutcome,
     verify_execution_reality,
 )
+from .reconciliation_scope import (
+    ReconciliationReferenceTime,
+    RequiredReconciliationScope,
+    declare_required_reconciliation_scope,
+)
 
 __all__ = [
     "ExecutionCompletionState",
@@ -86,12 +91,15 @@ __all__ = [
     "OrderTerminalReferenceTime",
     "OrderTerminalState",
     "ReportedExecution",
+    "ReconciliationReferenceTime",
+    "RequiredReconciliationScope",
     "SupportingExecutionEvidence",
     "SupportingExternalOrderRealityEvidence",
     "SupportingInternalExecutionEvidence",
     "SupportingInternalOrderRealityEvidence",
     "SupportingOrderTerminalEvidence",
     "classify_execution_completion",
+    "declare_required_reconciliation_scope",
     "prepare_operational_request",
     "qualify_external_execution_reality",
     "qualify_external_order_reality",
