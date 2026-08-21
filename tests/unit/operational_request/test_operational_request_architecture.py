@@ -53,6 +53,7 @@ def test_dependency_direction_and_infrastructure_independence() -> None:
         "internal_order_reality.py",
         "order_reality.py",
         "order_terminal_state.py",
+        "reconciliation_scope.py",
     }
     execution_source_without_submission_dependents = "\n".join(
         path.read_text(encoding="utf-8")
