@@ -48,6 +48,11 @@ from .order_reality import (
     SupportingExternalOrderRealityEvidence,
     qualify_external_order_reality,
 )
+from .order_reality_verification import (
+    OrderRealityVerification,
+    OrderRealityVerificationOutcome,
+    verify_order_reality,
+)
 from .reality_verification import (
     ExecutionRealityVerification,
     ExecutionRealityVerificationOutcome,
@@ -75,6 +80,8 @@ __all__ = [
     "OperationalIntent",
     "OperationDirection",
     "OrderLifecycleMeaning",
+    "OrderRealityVerification",
+    "OrderRealityVerificationOutcome",
     "OrderRealityReferenceTime",
     "OrderTerminalReferenceTime",
     "OrderTerminalState",
@@ -92,4 +99,5 @@ __all__ = [
     "qualify_internal_order_reality",
     "recognize_order_terminal_state",
     "verify_execution_reality",
+    "verify_order_reality",
 ]
