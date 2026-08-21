@@ -37,6 +37,8 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "OperationalIntent",
         "OperationDirection",
         "OrderLifecycleMeaning",
+        "OrderRealityVerification",
+        "OrderRealityVerificationOutcome",
         "OrderRealityReferenceTime",
         "OrderTerminalReferenceTime",
         "OrderTerminalState",
@@ -54,6 +56,7 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "qualify_internal_order_reality",
         "recognize_order_terminal_state",
         "verify_execution_reality",
+        "verify_order_reality",
     ]
 
 
