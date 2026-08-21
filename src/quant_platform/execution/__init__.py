@@ -63,6 +63,11 @@ from .reconciliation_scope import (
     RequiredReconciliationScope,
     declare_required_reconciliation_scope,
 )
+from .reconciliation_completion import (
+    ReconciliationCompletionCondition,
+    ReconciliationCompletionQualification,
+    qualify_reconciliation_completion,
+)
 
 __all__ = [
     "ExecutionCompletionState",
@@ -92,6 +97,8 @@ __all__ = [
     "OrderTerminalState",
     "ReportedExecution",
     "ReconciliationReferenceTime",
+    "ReconciliationCompletionCondition",
+    "ReconciliationCompletionQualification",
     "RequiredReconciliationScope",
     "SupportingExecutionEvidence",
     "SupportingExternalOrderRealityEvidence",
@@ -105,6 +112,7 @@ __all__ = [
     "qualify_external_order_reality",
     "qualify_internal_execution_reality",
     "qualify_internal_order_reality",
+    "qualify_reconciliation_completion",
     "recognize_order_terminal_state",
     "verify_execution_reality",
     "verify_order_reality",
