@@ -20,6 +20,15 @@ from .external_reality import (
     SupportingExecutionEvidence,
     qualify_external_execution_reality,
 )
+from .external_failure import (
+    ExternalFailure,
+    ExternalFailureAuthority,
+    ExternalFailureClass,
+    ExternalFailureObligation,
+    ExternalFailureReferenceTime,
+    SupportingExternalFailureEvidence,
+    recognize_external_failure,
+)
 from .internal_reality import (
     InternalExecutionAuthority,
     InternalExecutionReality,
@@ -76,6 +85,11 @@ __all__ = [
     "ExecutionRealityReferenceTime",
     "ExecutionRealityVerification",
     "ExecutionRealityVerificationOutcome",
+    "ExternalFailure",
+    "ExternalFailureAuthority",
+    "ExternalFailureClass",
+    "ExternalFailureObligation",
+    "ExternalFailureReferenceTime",
     "ExternalExecutionAuthority",
     "ExternalExecutionReality",
     "ExternalOrderReality",
@@ -101,6 +115,7 @@ __all__ = [
     "ReconciliationCompletionQualification",
     "RequiredReconciliationScope",
     "SupportingExecutionEvidence",
+    "SupportingExternalFailureEvidence",
     "SupportingExternalOrderRealityEvidence",
     "SupportingInternalExecutionEvidence",
     "SupportingInternalOrderRealityEvidence",
@@ -113,6 +128,7 @@ __all__ = [
     "qualify_internal_execution_reality",
     "qualify_internal_order_reality",
     "qualify_reconciliation_completion",
+    "recognize_external_failure",
     "recognize_order_terminal_state",
     "verify_execution_reality",
     "verify_order_reality",
