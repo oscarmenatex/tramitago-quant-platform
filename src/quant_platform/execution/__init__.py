@@ -37,6 +37,10 @@ from .external_failure import (
     SupportingExternalFailureEvidence,
     recognize_external_failure,
 )
+from .external_failure_publication import (
+    ExternalFailurePublication,
+    publish_external_failure,
+)
 from .internal_reality import (
     InternalExecutionAuthority,
     InternalExecutionReality,
@@ -101,6 +105,7 @@ __all__ = [
     "ExternalFailureAuthority",
     "ExternalFailureClass",
     "ExternalFailureObligation",
+    "ExternalFailurePublication",
     "ExternalFailureReferenceTime",
     "ExternalExecutionAuthority",
     "ExternalExecutionReality",
@@ -136,6 +141,7 @@ __all__ = [
     "classify_execution_completion",
     "declare_required_reconciliation_scope",
     "prepare_operational_request",
+    "publish_external_failure",
     "qualify_external_execution_reality",
     "qualify_external_failure_capital_protection",
     "qualify_external_order_reality",
