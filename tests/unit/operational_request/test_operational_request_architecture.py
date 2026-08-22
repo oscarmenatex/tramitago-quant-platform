@@ -51,6 +51,7 @@ def test_dependency_direction_and_infrastructure_independence() -> None:
     execution_paths = tuple(Path("src/quant_platform/execution").rglob("*.py"))
     submission_dependent_modules = {
         "internal_order_reality.py",
+        "external_failure.py",
         "order_reality.py",
         "order_terminal_state.py",
         "reconciliation_scope.py",
