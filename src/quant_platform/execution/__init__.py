@@ -12,6 +12,14 @@ from .completion import (
     ExecutionCompletionStatus,
     classify_execution_completion,
 )
+from .capital_protection import (
+    CapitalProtectionAuthority,
+    CapitalProtectionReferenceTime,
+    ExternalFailureCapitalProtectionCondition,
+    ExternalFailureCapitalProtectionQualification,
+    SupportingCapitalProtectionEvidence,
+    qualify_external_failure_capital_protection,
+)
 from .external_reality import (
     ExecutionRealityReferenceTime,
     ExternalExecutionAuthority,
@@ -79,6 +87,8 @@ from .reconciliation_completion import (
 )
 
 __all__ = [
+    "CapitalProtectionAuthority",
+    "CapitalProtectionReferenceTime",
     "ExecutionCompletionState",
     "ExecutionCompletionStatus",
     "ExecutionDomainError",
@@ -86,6 +96,8 @@ __all__ = [
     "ExecutionRealityVerification",
     "ExecutionRealityVerificationOutcome",
     "ExternalFailure",
+    "ExternalFailureCapitalProtectionCondition",
+    "ExternalFailureCapitalProtectionQualification",
     "ExternalFailureAuthority",
     "ExternalFailureClass",
     "ExternalFailureObligation",
@@ -115,6 +127,7 @@ __all__ = [
     "ReconciliationCompletionQualification",
     "RequiredReconciliationScope",
     "SupportingExecutionEvidence",
+    "SupportingCapitalProtectionEvidence",
     "SupportingExternalFailureEvidence",
     "SupportingExternalOrderRealityEvidence",
     "SupportingInternalExecutionEvidence",
@@ -124,6 +137,7 @@ __all__ = [
     "declare_required_reconciliation_scope",
     "prepare_operational_request",
     "qualify_external_execution_reality",
+    "qualify_external_failure_capital_protection",
     "qualify_external_order_reality",
     "qualify_internal_execution_reality",
     "qualify_internal_order_reality",

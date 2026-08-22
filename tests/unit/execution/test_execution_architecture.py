@@ -17,6 +17,8 @@ from quant_platform.portfolio import PortfolioState
 
 def test_public_api_is_limited_to_the_authorized_contract() -> None:
     assert execution.__all__ == [
+        "CapitalProtectionAuthority",
+        "CapitalProtectionReferenceTime",
         "ExecutionCompletionState",
         "ExecutionCompletionStatus",
         "ExecutionDomainError",
@@ -24,6 +26,8 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "ExecutionRealityVerification",
         "ExecutionRealityVerificationOutcome",
         "ExternalFailure",
+        "ExternalFailureCapitalProtectionCondition",
+        "ExternalFailureCapitalProtectionQualification",
         "ExternalFailureAuthority",
         "ExternalFailureClass",
         "ExternalFailureObligation",
@@ -53,6 +57,7 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "ReconciliationCompletionQualification",
         "RequiredReconciliationScope",
         "SupportingExecutionEvidence",
+        "SupportingCapitalProtectionEvidence",
         "SupportingExternalFailureEvidence",
         "SupportingExternalOrderRealityEvidence",
         "SupportingInternalExecutionEvidence",
@@ -62,6 +67,7 @@ def test_public_api_is_limited_to_the_authorized_contract() -> None:
         "declare_required_reconciliation_scope",
         "prepare_operational_request",
         "qualify_external_execution_reality",
+        "qualify_external_failure_capital_protection",
         "qualify_external_order_reality",
         "qualify_internal_execution_reality",
         "qualify_internal_order_reality",
